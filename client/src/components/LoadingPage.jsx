@@ -1,8 +1,9 @@
-import React from "react";
+
 import Lottie from "react-lottie";
 import riderAnimation from "./animations/rider.json"; // adjust path as needed
 import socketInstance from "../services/socketService"
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 const defaultOptions = {
   loop: true,
   autoplay: true,
@@ -13,11 +14,13 @@ const defaultOptions = {
 };
 
 export default function RideBookingLoading() {
+  const navigate = useNavigate();
   useEffect(() => {
     const socket = socketInstance.getSocket("user");
     socket.on("ride-booked", (rideId) => {
       console.log("Ride booked successfully", rideId);
-      // Navigate to the ride details page or update the app state accordingly
+      navigate("/");
+      
     });
     socket.on("ride-booking-cancelled", (rideId) => {
       console.log("Ride booking cancelled", rideId);

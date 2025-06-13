@@ -4,7 +4,7 @@ import { Car, MapPin, Check, Shield, CheckCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MapComponent from "../components/MapComponent";
 import { useContext } from "react";
-import MapContext from "../context/MapContext";
+import MapContext from "../context/AppContext";
 const HomePage = () => {
   
   const {apiUrl} = useContext(MapContext);
@@ -88,7 +88,7 @@ const HomePage = () => {
     }
     try {
       const response = await axios.post(
-        "${apiUrl}/bookings/new",
+        `${apiUrl}/bookings/new`,
         {
           userAddress: pickupLocation,
           source: userLocation,
@@ -113,7 +113,7 @@ const HomePage = () => {
     setDisableMap(true);
     try {
       const response = await axios.post(
-        "${apiUrl}/api/get-address",
+        `${apiUrl}/api/get-address`,
         { lat: location.lat, lon: location.lng }
       );
       console.log(response);

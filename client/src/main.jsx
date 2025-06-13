@@ -4,7 +4,7 @@ import "./index.css";
 import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
-import { MapProvider } from "./context/MapContext.jsx";
+import { MapProvider } from "./context/AppContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

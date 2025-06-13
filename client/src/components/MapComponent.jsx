@@ -7,7 +7,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useContext, useState } from "react";
-import MapContext from "../context/MapContext";
+import MapContext from "../context/AppContext";
 
 function MapComponent({
   latitude,

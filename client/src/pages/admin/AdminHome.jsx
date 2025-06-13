@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import socketInstance from "../../services/socketService";
 import {
   CheckCircle,
@@ -11,7 +11,9 @@ import {
   X,
 } from "lucide-react";
 import axios from "axios";
+import MapContext from "../../context/AppContext";
 const AdminDashboard = () => {
+  const {apiUrl} = useContext(MapContext);
   const [rides, setRides] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [selectedRide, setSelectedRide] = useState(null);
@@ -28,7 +30,8 @@ const AdminDashboard = () => {
   };
   const fetchBookings = async () => {
     setLoading(true);
-    const bookings = await axios.get("http://localhost:8000/bookings");
+    
+    const bookings = await axios.get(`${apiUrl}/bookings`);
     console.log(bookings);
     setRides(bookings.data);
     setLoading(false);
@@ -113,9 +116,12 @@ const AdminDashboard = () => {
 
   const assignDriver = async (rideId, driverId) => {
     setIsAssigning(true);
-
+    const response = await axios.post(`${apiUrl}/bookings/assignDriver/${rideId}`,{
+      driverId, 
+    })
+    console.log(response);
     // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // await new Promise((resolve) => setTimeout(resolve, 1500));
 
     setRides((prevRides) =>
       prevRides.map((ride) =>
@@ -365,7 +371,7 @@ const AdminDashboard = () => {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {rides.map((ride) => (
-                          <tr key={ride.id} className="hover:bg-gray-50">
+                          <tr key={ride._id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10">
