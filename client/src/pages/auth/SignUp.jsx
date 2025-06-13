@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { User, Lock, Mail, Phone } from "lucide-react";
+import MapContext from "../../context/AppContext";
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ const SignupPage = () => {
     phone: "",
     password: "",
   });
+  const {apiUrl} = useContext(MapContext);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,7 +28,7 @@ const SignupPage = () => {
     setIsLoading(true);
     console.log(formData)
     try {
-      await axios.post("http://localhost:8000/api/auth/signup", formData);
+      await axios.post(`${apiUrl}/api/auth/signup`, formData);
       alert("Account created successfully! Please check your email for verification.");
     } catch (error) {
       console.log("Signup error:", error);

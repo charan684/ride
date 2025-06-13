@@ -1,5 +1,8 @@
 // src/socket.js
+import { useContext } from 'react';
 import { io } from 'socket.io-client';
+import MapContext from '../context/AppContext';
+  const {apiUrl} = useContext(MapContext);
 
 class SocketSingleton {
   constructor() {
@@ -13,7 +16,7 @@ class SocketSingleton {
 
   getSocket(role) {
     if (!this.socket) {
-      this.socket = io('http://localhost:8000', {
+      this.socket = io(`${apiUrl}`, {
         autoConnect: true,
         // auth: { token: 'your-auth-token' }, // optional
       });

@@ -6,6 +6,10 @@ import MapComponent from "../components/MapComponent";
 import { useContext } from "react";
 import MapContext from "../context/MapContext";
 const HomePage = () => {
+  
+  const {apiUrl} = useContext(MapContext);
+  
+
   const { destLocation } = useContext(MapContext);
   const [userLocation, setUserLocation] = useState(null);
   const [pickupLocation, setPickupLocation] = useState("");
@@ -43,7 +47,7 @@ const HomePage = () => {
         setUserLocation(location);
         try {
           const response = await axios.post(
-            "http://localhost:8000/api/get-address",
+            `${apiUrl}/api/get-address`,
             { lat: location.lat, lon: location.lng }
           );
           console.log(response.data.address);
@@ -84,7 +88,7 @@ const HomePage = () => {
     }
     try {
       const response = await axios.post(
-        "http://localhost:8000/bookings/new",
+        "${apiUrl}/bookings/new",
         {
           userAddress: pickupLocation,
           source: userLocation,
@@ -109,7 +113,7 @@ const HomePage = () => {
     setDisableMap(true);
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/get-address",
+        "${apiUrl}/api/get-address",
         { lat: location.lat, lon: location.lng }
       );
       console.log(response);

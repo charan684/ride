@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import axios from "axios";
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, Mail, User } from 'lucide-react';
 import socketInstance from '../../services/socketService';
+import MapContext from '../../context/AppContext';
 const LoginPage = () => {
   const navigate=useNavigate()
   const [formData, setFormData] = useState({
@@ -10,7 +11,7 @@ const LoginPage = () => {
     password: '',
    
   });
-
+  const {apiUrl} = useContext(MapContext);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -62,7 +63,7 @@ const LoginPage = () => {
     
     try {
       // Add your login API call here
-      const response= await axios.post("http://localhost:8000/api/auth/login",formData)
+      const response= await axios.post(`${apiUrl}/api/auth/login`,formData)
       console.log(response)
       localStorage.setItem("token",response.data.token)
       if(response.data.role === "admin"){
