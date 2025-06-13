@@ -1,48 +1,48 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const rideSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User",
     required: true,
   },
 
   pickupLocation: {
     address: { type: String },
     coordinates: {
-      lat: { type: Number, required: true },
-      lng: { type: Number, required: true },
+      lat: { type: String, required: true },
+      lng: { type: String, required: true },
     },
   },
 
   destination: {
     address: { type: String },
     coordinates: {
-      lat: { type: Number, required: true },
-      lng: { type: Number, required: true },
+      lat: { type: String, required: true },
+      lng: { type: String, required: true },
     },
   },
 
-//   rideType: {
-//     type: String,
-//     enum: ['shared', 'standard', 'premium'],
-//     default: 'standard',
-//   },
+  //   rideType: {
+  //     type: String,
+  //     enum: ['shared', 'standard', 'premium'],
+  //     default: 'standard',
+  //   },
 
   status: {
     type: String,
-    enum: ['requested', 'accepted', 'in_progress', 'completed', 'cancelled'],
-    default: 'requested',
+    enum: ["requested", "accepted", "in_progress", "completed", "cancelled"],
+    default: "requested",
   },
 
-//   estimatedFare: {
-//     type: Number,
-//     required: true,
-//   },
+  //   estimatedFare: {
+  //     type: Number,
+  //     required: true,
+  //   },
 
   driver: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // if you ever add drivers as users
+    ref: "User", // if you ever add drivers as users
     default: null,
   },
 
@@ -54,7 +54,15 @@ const rideSchema = new mongoose.Schema({
   completedAt: {
     type: Date,
   },
+  userName:{
+    type: String,
+    default:null,
+  },
+  userPhone:{
+    type: String,
+    default:null,
+  },
 });
 
-const Ride = mongoose.model('Ride', rideSchema);
+const Ride = mongoose.model("Ride", rideSchema);
 export default Ride;

@@ -11,14 +11,21 @@ import bookingRoutes from "./routes/booking.route.js";
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
-const adminSocketId = null;
+const io = new Server(server, { cors: { origin: "*" } });
+let adminSocketId = null;
+const users = [];
 io.on("connection", (socket) => {
   console.log("A user connected", socket.id);
   socket.on("admin-login", () => {
     adminSocketId = socket.id;
     console.log("Admin logged in", adminSocketId);
   });
+  socket.on("user-login",(token)=>{
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+    const socketId = socket.id;
+    users.push({userId:socketId})
+  })
   socket.on("disconnect", () => {
     if(adminSocketId === socket.id) {
       adminSocketId = null;
@@ -29,10 +36,12 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 8000;
-const __dirname = path.resolve();
+
 
 export const notifyAdmin = (message)=>{
+  console.log("Notifying admin: ", message);
   if(adminSocketId){
+    console.log("Sending notification to admin", adminSocketId);
     io.to(adminSocketId).emit("new-ride",message);
   }
 }

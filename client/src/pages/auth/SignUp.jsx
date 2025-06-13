@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
+import { User, Lock, Mail, Phone } from "lucide-react";
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
@@ -40,10 +42,7 @@ const SignupPage = () => {
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
             <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1V8a1 1 0 00-1-1h-3z" />
-              </svg>
+              <User className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Join RideEasy</h2>
             <p className="text-gray-600">Create your account and start riding today</p>
@@ -125,9 +124,9 @@ const SignupPage = () => {
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{" "}
-                <a href="#" className="text-blue-600 hover:text-blue-500 font-medium">
+                <Link to='/login' className="text-blue-600 hover:text-blue-500 font-medium">
                   Sign in here
-                </a>
+                </Link>
               </p>
             </div>
           </form>
@@ -154,3 +153,4 @@ const SignupPage = () => {
 };
 
 export default SignupPage;
+

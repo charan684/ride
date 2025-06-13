@@ -1,47 +1,20 @@
-// import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-// import "leaflet/dist/leaflet.css";
-// import { useContext } from "react";
-// import MapContext from "../context/MapContext";
-
-// function MapComponent({latitude,longitude}) {
-//     const {setLocation}=useContext(MapContext)
-//     // console.log(latitude,longitude);
-//   return (
-//     <div style={{ height: "400px", width: "100%",zIndex:"0" }}>
-//       <MapContainer
-//         center={[latitude,longitude]}
-//         zoom={13}
-//         style={{ height: "100%", width: "100%",zIndex:"0" }}
-//         dragging={true}
-//         touchZoom={false}
-//         scrollWheelZoom={true}
-//         doubleClickZoom={true}
-//         zoomControl={true}
-//         keyboard={false}
-//         boxZoom={false}
-//       >
-//         <TileLayer
-//           attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-//           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-//         />
-//         <Marker position={[latitude, longitude]}>
-//           <Popup>
-//             You are here. <br /> Hyderabad
-//           </Popup>
-//         </Marker>
-//       </MapContainer>
-//     </div>
-//   );
-// }
-
-// export default MapComponent;
-
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMapEvents,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useContext, useState } from "react";
 import MapContext from "../context/MapContext";
 
-function MapComponent({ latitude, longitude ,handleDestinationClick}) {
+function MapComponent({
+  latitude,
+  longitude,
+  handleDestinationClick,
+  disableMap,
+}) {
   const { setDestLocation } = useContext(MapContext);
   const [destinationMarker, setDestinationMarker] = useState(null); // Store clicked location
 
@@ -52,14 +25,17 @@ function MapComponent({ latitude, longitude ,handleDestinationClick}) {
         const { lat, lng } = e.latlng;
         setDestinationMarker([lat, lng]);
         setDestLocation({ lat, lng }); // Update context with destination coords
-        console.log({ lat, lng })
-        handleDestinationClick()
+        console.log({ lat, lng });
+        if (!disableMap) {
+          handleDestinationClick({ lat, lng });
+        }
       },
     });
     return destinationMarker ? (
       <Marker position={destinationMarker}>
         <Popup>
-          Destination pinned at:<br />
+          Destination pinned at:
+          <br />
           {destinationMarker[0].toFixed(4)}, {destinationMarker[1].toFixed(4)}
         </Popup>
       </Marker>
@@ -83,7 +59,9 @@ function MapComponent({ latitude, longitude ,handleDestinationClick}) {
 
         {/* Marker for current location */}
         <Marker position={[latitude, longitude]}>
-          <Popup>You are here. <br /> Hyderabad</Popup>
+          <Popup>
+            You are here. <br /> Hyderabad
+          </Popup>
         </Marker>
 
         {/* Handle user clicks to pin destination */}
