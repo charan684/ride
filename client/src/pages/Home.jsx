@@ -25,6 +25,7 @@ const HomePage = () => {
   // Get user's current location on component mount
   useEffect(() => {
     getUserLocation();
+    
   }, []);
 
   const getUserLocation = async () => {

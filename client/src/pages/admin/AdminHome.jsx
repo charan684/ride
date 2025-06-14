@@ -13,12 +13,11 @@ import {
 import axios from "axios";
 import MapContext from "../../context/AppContext";
 const AdminDashboard = () => {
-  const {apiUrl} = useContext(MapContext);
+  const { apiUrl } = useContext(MapContext);
   const [rides, setRides] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [selectedRide, setSelectedRide] = useState(null);
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
+
   const [isAssigning, setIsAssigning] = useState(false);
   const [showDriverModal, setShowDriverModal] = useState(false);
   const [activeTab, setActiveTab] = useState("rides");
@@ -30,19 +29,32 @@ const AdminDashboard = () => {
   };
   const fetchBookings = async () => {
     setLoading(true);
-    
+
     const bookings = await axios.get(`${apiUrl}/bookings`);
     console.log(bookings);
+    
     setRides(bookings.data);
     setLoading(false);
   };
+
+  const fetchAvailableDrivers = async () => {
+    const drivers = await axios.get(`${apiUrl}/active-riders`);
+    console.log(drivers);
+    setDrivers(drivers.data);
+  };
+  const handleNewDriver = (driver) => {
+    console.log("New driver received: ", driver);
+    setDrivers((prevDrivers) => [...prevDrivers, driver]);
+  };
+
   useEffect(() => {
     const socket = socketInstance.getSocket("admin");
     socket.on("new-ride", handleNewRide);
-    
 
+    socket.on("new-driver", handleNewDriver);
     fetchBookings();
 
+    fetchAvailableDrivers();
     // Simulate fetching drivers data
     setDrivers([
       {
@@ -79,7 +91,10 @@ const AdminDashboard = () => {
         earnings: 167.25,
       },
     ]);
-    return () => socket.off("new-ride", handleNewRide);
+    return () => {
+      socket.off("new-ride", handleNewRide);
+      socket.off("new-driver", handleNewDriver);
+    };
   }, []);
 
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
@@ -97,28 +112,35 @@ const AdminDashboard = () => {
   };
 
   const getNearestDrivers = (rideCoords) => {
-    const availableDrivers = drivers.filter(
-      (driver) => driver.status === "available"
-    );
+    const availableDrivers = drivers;
 
-    return availableDrivers
-      .map((driver) => ({
-        ...driver,
-        distance: calculateDistance(
-          rideCoords.lat,
-          rideCoords.lng,
-          driver.location.lat,
-          driver.location.lng
-        ),
-      }))
-      .sort((a, b) => a.distance - b.distance);
+    // return availableDrivers
+    //   .map((driver) => ({
+    //     ...driver,
+    //     distance: calculateDistance(
+    //       rideCoords.lat,
+    //       rideCoords.lng,
+    //       driver.location.lat,
+    //       driver.location.lng
+    //     ),
+    //   }))
+    //   .sort((a, b) => a.distance - b.distance);
+    return drivers;
   };
 
   const assignDriver = async (rideId, driverId) => {
     setIsAssigning(true);
-    const response = await axios.post(`${apiUrl}/bookings/assignDriver/${rideId}`,{
-      driverId, 
-    })
+    console.log(rideId);
+    if(!rideId){
+      setIsAssigning(false);
+      return;
+    }
+    const response = await axios.post(
+      `${apiUrl}/bookings/assignDriver/${rideId}`,
+      {
+        driverId,
+      }
+    );
     console.log(response);
     // Simulate API call
     // await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -141,8 +163,6 @@ const AdminDashboard = () => {
     setShowDriverModal(false);
     setSelectedRide(null);
   };
-
-  
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -254,11 +274,7 @@ const AdminDashboard = () => {
                       Active Drivers
                     </p>
                     <p className="text-3xl font-bold text-green-600">
-                      {
-                        drivers.filter(
-                          (driver) => driver.status === "available"
-                        ).length
-                      }
+                      {drivers.length}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -389,9 +405,7 @@ const AdminDashboard = () => {
                                     {ride.userPhone}
                                   </div>
                                   <div className="text-xs text-gray-400">
-                                    {new Date(
-                                      ride.bookedAt
-                                    ).toLocaleString()}
+                                    {new Date(ride.bookedAt).toLocaleString()}
                                   </div>
                                 </div>
                               </div>
@@ -432,6 +446,7 @@ const AdminDashboard = () => {
                               {ride.status === "requested" ? (
                                 <button
                                   onClick={() => {
+                                    console.log(ride)
                                     setSelectedRide(ride);
                                     setShowDriverModal(true);
                                   }}
@@ -463,19 +478,19 @@ const AdminDashboard = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {drivers.map((driver) => (
                       <div
-                        key={driver.id}
+                        key={driver._id}
                         className="bg-gray-50 rounded-xl p-6 border border-gray-200"
                       >
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center space-x-3">
                             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                              {/* <span className="text-lg font-medium text-blue-600">
-                                {driver.name.charAt(0)}
-                              </span> */}
+                              <span className="text-lg font-medium text-blue-600">
+                                {driver.username.charAt(0)}
+                              </span>
                             </div>
                             <div>
                               <h4 className="font-semibold text-gray-900">
-                                {driver.name}
+                                {driver.username}
                               </h4>
                               <p className="text-sm text-gray-600">
                                 {driver.phone}
@@ -483,13 +498,12 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                           <span
-                            className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                              driver.status === "available"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
+                            className={`px-2 py-1 text-xs font-semibold rounded-full  "bg-green-100 text-green-800"
+                               
                             }`}
                           >
-                            {driver.status}
+                            {/* {driver.status} */}
+                            available
                           </span>
                         </div>
 
@@ -497,16 +511,17 @@ const AdminDashboard = () => {
                           <div className="flex justify-between">
                             <span className="text-gray-600">Vehicle:</span>
                             <span className="font-medium">
-                              {driver.vehicle}
+                              {/* {driver.vehicle} */}
+                              Bike
                             </span>
                           </div>
-                          <div className="flex justify-between">
+                          {/* <div className="flex justify-between">
                             <span className="text-gray-600">License:</span>
                             <span className="font-medium">
                               {driver.license}
                             </span>
-                          </div>
-                          <div className="flex justify-between">
+                          </div> */}
+                          {/* <div className="flex justify-between">
                             <span className="text-gray-600">Rating:</span>
                             <div className="flex items-center">
                               <span className="font-medium">
@@ -514,13 +529,13 @@ const AdminDashboard = () => {
                               </span>
                               <Star className="w-4 h-4 text-yellow-400 ml-1" />
                             </div>
-                          </div>
-                          <div className="flex justify-between">
+                          </div> */}
+                          {/* <div className="flex justify-between">
                             <span className="text-gray-600">Earnings:</span>
                             <span className="font-medium text-green-600">
                               ${driver.earnings}
                             </span>
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                     ))}
@@ -577,26 +592,28 @@ const AdminDashboard = () => {
                     Available Drivers (Sorted by Distance)
                   </h4>
                   <div className="space-y-3">
-                    {getNearestDrivers(selectedRide.pickupLocation.coordinates).map(
-                      (driver) => (
-                        <div
-                          key={driver.id}
-                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              {/* <span className="font-medium text-blue-600">
-                                {driver.name.charAt(0)}
-                              </span> */}
-                            </div>
-                            <div>
-                              <h5 className="font-medium text-gray-900">
-                                {driver.name}
-                              </h5>
-                              <p className="text-sm text-gray-600">
-                                {driver.vehicle}
-                              </p>
-                              <div className="flex items-center space-x-2 text-sm">
+                    {getNearestDrivers(
+                      selectedRide.pickupLocation.coordinates
+                    ).map((driver) => (
+                      <div
+                        key={driver._id}
+                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="font-medium text-blue-600">
+                              {driver.username.charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <h5 className="font-medium text-gray-900">
+                              {driver.username}
+                            </h5>
+                            <p className="text-sm text-gray-600">
+                              {/* {driver.vehicle} */}
+                              Bike
+                            </p>
+                            {/* <div className="flex items-center space-x-2 text-sm">
                                 <span className="text-gray-500">
                                   Rating: {driver.rating}
                                 </span>
@@ -604,21 +621,21 @@ const AdminDashboard = () => {
                                 <span className="text-gray-500">
                                   Distance: {driver.distance.toFixed(1)} km
                                 </span>
-                              </div>
-                            </div>
+                              </div> */}
                           </div>
-                          <button
-                            onClick={() =>
-                              assignDriver(selectedRide.id, driver.id)
-                            }
-                            disabled={isAssigning}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition duration-200"
-                          >
-                            {isAssigning ? "Assigning..." : "Assign"}
-                          </button>
                         </div>
-                      )
-                    )}
+                        <button
+                          onClick={() => {
+                            console.log(selectedRide,driver);
+                            assignDriver(selectedRide._id, driver._id);
+                          }}
+                          disabled={isAssigning}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition duration-200"
+                        >
+                          {isAssigning ? "Assigning..." : "Assign"}
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

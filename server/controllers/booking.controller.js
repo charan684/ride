@@ -1,4 +1,4 @@
-import { notifyAdmin } from "../index.js";
+import { notifyAdmin,notifyUser,notifyDriver } from "../index.js";
 import bookingModel from "../models/ride.model.js";
 import User from "../models/user.model.js";
 const createBooking = async (req, res) => {
@@ -9,8 +9,8 @@ const createBooking = async (req, res) => {
   // console.log(decoded);
   const user = await User.findById(decoded.userId);
   if (!user) return res.status(404).json({ error: "User not found" });
-
-  const newBooking = bookingModel.create({
+  console.log("booking user" ,user)
+  const newBooking = await bookingModel.create({
     user: decoded.userId,
     pickupLocation: {
       address: userAddress,
@@ -22,10 +22,11 @@ const createBooking = async (req, res) => {
     },
     status: "requested",
     driver: null,
-    userName: user.name,
-    phone: user.phone,
+    userName: user.username,
+    userPhone: user.phone,
   });
   notifyAdmin({
+    _id:newBooking._id,
     user: decoded.userId,
     pickupLocation: {
       address: userAddress,
@@ -37,8 +38,8 @@ const createBooking = async (req, res) => {
     },
     status: "requested",
     driver: null,
-    userName: user.name,
-    phone: user.phone,
+    userName: user.username,
+    userPhone: user.phone,
   });
   return res.status(200).json({
     message:
@@ -64,6 +65,8 @@ export const cancelBooking = async (req, res) => {
 
 export const assignDriver = async (req, res) => {
   const { id } = req.params;
+  console.log(id);
+  if(!id) return res.status(400).json({ error: "Invalid booking ID" });
   const { driverId } = req.body;
   const rideDetails = await bookingModel.findById(id);
   if (!rideDetails)
@@ -71,6 +74,7 @@ export const assignDriver = async (req, res) => {
   
   rideDetails.driver = driverId;
   await rideDetails.save();
+  console.log(rideDetails);
   await notifyDriver(rideDetails);
   await notifyUser(rideDetails);
   return res.status(200).json({ message: "Driver assigned successfully" });

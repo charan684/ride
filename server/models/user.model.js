@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -27,19 +27,27 @@ const userSchema = new mongoose.Schema({
 
   role: {
     type: String,
-    enum: ['user', 'admin','rider'],
-    default: 'user',
+    enum: ["user", "admin", "rider"],
+    default: "user",
   },
-//   profileImage: {
-//     type: String, // URL or path
-//     default: '',
-//   },
+  //   profileImage: {
+  //     type: String, // URL or path
+  //     default: '',
+  //   },
+  location: {
+    lat: {
+      type: String,
+    },
+    lng: {
+      type: String,
+    },
+  },
 
   createdAt: {
     type: Date,
     default: Date.now,
-  }
+  },
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 export default User;
