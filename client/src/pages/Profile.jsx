@@ -1,62 +1,72 @@
 import React from 'react';
 
-const user = {
-  _id: "684ab2de535c909cfb0a1874",
-  username: "Nithin",
-  email: "jv1@gmail.com",
-  password: "$2b$10$vhhdIfhVVzuxbZRuNKnZH.EiZ4iFaH.ntzub9VACtOkx80egPNLJW",
-  phone: "1234567899",
-  role: "user",
-  createdAt: "2025-06-12T10:58:38.012+00:00",
-  __v: 0
-};
+const ProfilePage = () => {
+    // const {}
+  // Dummy user data
+  const user = {
+    name: "John Doe",
+    email: "john.doe@example.com",
+    phone: "+1 (555) 123-4567",
+    avatarUrl: "/avatar-placeholder.png", // Optional avatar
+  };
 
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+  const handleEdit = () => {
+    alert("Edit profile clicked");
+  };
 
-const UserProfile = () => {
+  const handleLogout = () => {
+    alert("Logged out");
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-3xl mx-auto bg-white shadow-md rounded-xl p-6">
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold">
-            {user.username.charAt(0)}
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{user.username}</h2>
-            <p className="text-sm text-gray-500 capitalize">{user.role}</p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header */}
+      {/* <header className="flex justify-between items-center px-6 py-4 bg-white shadow">
+        <img src="/logo.png" alt="Ride Logo" className="h-10" />
+        <button
+          onClick={handleEdit}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Edit Profile
+        </button>
+      </header> */}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <ProfileField label="User ID" value={user._id} />
-          <ProfileField label="Username" value={user.username} />
-          <ProfileField label="Email" value={user.email} />
-          <ProfileField label="Phone" value={user.phone} />
-          <ProfileField label="Password (Encrypted)" value={user.password} />
-          <ProfileField label="Role" value={user.role} />
-          <ProfileField label="Member Since" value={formatDate(user.createdAt)} />
-          <ProfileField label="DB Version" value={`v${user.__v}`} />
+      {/* Main Content */}
+      <main className="flex-grow flex items-center justify-center px-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
+          <img
+            src={user.avatarUrl}
+            alt="User Avatar"
+            className="w-24 h-24 rounded-full mx-auto mb-4"
+          />
+          <h1 className="text-2xl font-semibold mb-2 text-gray-800">
+            {user.name}
+          </h1>
+          <ul className="text-gray-600 mb-6 space-y-2 text-left">
+            <li>
+              <span className="font-medium">Email:</span> {user.email}
+            </li>
+            <li>
+              <span className="font-medium">Phone:</span> {user.phone}
+            </li>
+          </ul>
+          <button
+            onClick={handleLogout}
+            className="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            Log Out
+          </button>
         </div>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="py-4 text-center text-sm text-gray-500">
+        <a href="/help" className="hover:underline mx-2">Help</a>
+        <a href="/terms" className="hover:underline mx-2">Terms</a>
+        <a href="/privacy" className="hover:underline mx-2">Privacy</a>
+      </footer>
     </div>
   );
 };
 
-const ProfileField = ({ label, value }) => (
-  <div>
-    <p className="text-sm text-gray-600">{label}</p>
-    <p className="font-medium text-gray-900 truncate">{value}</p>
-  </div>
-);
-
-export default UserProfile;
-
+export default ProfilePage;

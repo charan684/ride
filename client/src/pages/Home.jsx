@@ -11,7 +11,7 @@ const HomePage = () => {
   const {apiUrl} = useContext(MapContext);
   
 
-  const { destLocation } = useContext(MapContext);
+  const { destLocation,setDestLocation } = useContext(MapContext);
   const [userLocation, setUserLocation] = useState(null);
   const [pickupLocation, setPickupLocation] = useState("");
   // const [destination, setDestination] = useState("");
@@ -22,6 +22,7 @@ const HomePage = () => {
   const [estimatedFare, setEstimatedFare] = useState(null);
   const [destAdd, setDestAdd] = useState("");
   const [disableMap, setDisableMap] = useState(false);
+  const [destFieldPlaceholder,setDestFieldPlaceholder] = useState("Enter destination address");
   const navigate = useNavigate();
   // Get user's current location on component mount
   useEffect(() => {
@@ -29,6 +30,11 @@ const HomePage = () => {
     
   }, []);
 
+  const fetchCoordsFromAddr = async()=>{
+    const response = await axios.post(`${apiUrl}/getCoords`,{address:destAdd});
+    console.log(response.data);
+    setDestLocation(response.data);
+  }
   const getUserLocation = async () => {
     setIsLoadingLocation(true);
     setLocationError("");
@@ -110,7 +116,7 @@ const HomePage = () => {
   };
 
   const handleDestinationClick = async (location) => {
-    setDestAdd("Fetching destination address...");
+    
     console.log(location);
     setDisableMap(true);
     try {
@@ -194,6 +200,7 @@ const HomePage = () => {
                     type="text"
                     value={pickupLocation}
                     onChange={(e) => setPickupLocation(e.target.value)}
+                   
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter pickup location"
                   />
@@ -213,13 +220,12 @@ const HomePage = () => {
                     type="text"
                     value={destAdd}
                     onChange={(e) => {
-                     
-                      setDestAdd(e.target.value)
-                      // console.log(destination)
+                      setDestAdd(e.target.value);
                     }}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter destination"
+                    placeholder={destFieldPlaceholder}
                   />
+                  <button onClick={fetchCoordsFromAddr}>show on map</button>
                 </div>
                   <button disabled={destAdd ? false :true} className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-50" onClick={fetchCoordsFromAdd}>Show on map</button>
               </div>

@@ -64,9 +64,25 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("rider-location", (location) => {
-    console.log(location);
-});
+  socket.on("driver-location",async(data)=>{
+    console.log(data);
+    const {location,userId,riderId,rideId} = data;
+    if(userId){
+      const userIndex = users.find((u) => u.userId === userId);
+      if(!userIndex){
+        console.log("User is not tracking");
+        return;
+      }
+      io.to(userIndex.socketId).emit("driver-location", {location, riderId, rideId});
+    }
+    const driver = User.findOne({_id: userId});
+    if(driver){
+      console.log("Driver location: ", location);
+     driver.location = location;
+     await driver.save();
+    }
+    console.log("Driver location: ", location);
+  })
   socket.on("disconnect", () => {
     if (adminSocketId === socket.id) {
       adminSocketId = null;

@@ -15,16 +15,16 @@ function MapComponent({
   handleDestinationClick,
   disableMap,
 }) {
-  const { setDestLocation } = useContext(MapContext);
+  const { setDestLocation,destLocation } = useContext(MapContext);
   const [destinationMarker, setDestinationMarker] = useState(null); // Store clicked location
-
+  setDestinationMarker(destLocation);
   // Component to handle map clicks for setting destination
   function DestinationMarkerSetter() {
     useMapEvents({
       click(e) {
         const { lat, lng } = e.latlng;
         setDestinationMarker([lat, lng]);
-        setDestLocation({ lat, lng }); // Update context with destination coords
+        setDestLocation({ lat, lng }); 
         console.log({ lat, lng });
         if (!disableMap) {
           handleDestinationClick({ lat, lng });

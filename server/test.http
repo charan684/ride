@@ -8,6 +8,7 @@ headers:
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODRjMTI1MmZkOGYyYmEyMzgzYWZmNzEiLCJpYXQiOjE3NTAwNTYwOTgsImV4cCI6MTc1MTM1MjA5OH0.83XkQtIB7R_cUh9EBljWPjYj-6J3yZFMNOh23BCu-K0
 
 
+<<<<<<< HEAD
 ### Get coordinates from address
 POST http://localhost:3000/geocode
 Content-Type: application/json
@@ -15,3 +16,7 @@ Content-Type: application/json
 {
   "address": "Ameerpet, Telangana, India"
 }
+=======
+ 
+
+>>>>>>> 2e1c88e5161d2b5192ffd8ff59597e3fdc88ec99

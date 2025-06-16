@@ -30,7 +30,8 @@ const TrackRide = () => {
   useEffect(() => {
     getRideDetails();
     const socket = socketInstance.getSocket("user");
-    socket.on("rider-location", (location) => {
+    socket.on("rider-location", (data) => {
+      const {location} = data;
       console.log("Received new location:", location);
       setRiderLocation(location);
       // Update the ride's location in the state or update the map accordingly
