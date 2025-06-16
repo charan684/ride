@@ -18,12 +18,13 @@ export const MapProvider=({children})=>{
             })
             setUser(response.data);
         }
+        
     }
     useEffect(()=>{
         fetchUser();
     },[])
     return(
-        <MapContext.Provider value={{destLocation,setDestLocation,apiUrl,user}}>
+        <MapContext.Provider value={{destLocation,setDestLocation,apiUrl,user,setUser}}>
             {children}
         </MapContext.Provider>
     )

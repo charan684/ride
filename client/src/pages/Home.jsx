@@ -127,6 +127,11 @@ const HomePage = () => {
     }
   };
 
+  const fetchCoordsFromAdd = async()=>{
+    const response = await axios.post(`${apiUrl}/getCoordsFromAdd`,{address:destAdd})
+    console.log(response);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
@@ -198,7 +203,7 @@ const HomePage = () => {
               {/* Destination */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Where to? Pin in the Map...
+                  Where to? 
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -208,13 +213,15 @@ const HomePage = () => {
                     type="text"
                     value={destAdd}
                     onChange={(e) => {
-                      setDestination(e.target.value);
+                     
+                      setDestAdd(e.target.value)
                       // console.log(destination)
                     }}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter destination"
                   />
                 </div>
+                  <button disabled={destAdd ? false :true} className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-50" onClick={fetchCoordsFromAdd}>Show on map</button>
               </div>
 
               {/* Book Ride Button */}
