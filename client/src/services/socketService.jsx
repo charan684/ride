@@ -13,7 +13,18 @@ class SocketSingleton {
     
     return SocketSingleton.instance;
   }
-  
+  clearSocket(){
+    console.log("clear");
+    try {
+      if(this.socket){
+        this.socket.disconnect();
+        this.socket=null;
+      }
+      
+    } catch (error) {
+      console.log("Clear socket : ",error)
+    }
+  }
   getSocket(role) {
     // const {apiUrl} = useContext(MapContext);
     if (!this.socket) {
