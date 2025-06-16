@@ -49,7 +49,7 @@ const createBooking = async (req, res) => {
 };
 
 export const getAllBookings = async (req, res) => {
-  const bookings = await bookingModel.find({ status: "requested" });
+  const bookings = await bookingModel.find({  });
 
   return res.status(200).json(bookings);
 };
@@ -90,4 +90,11 @@ const getBookingDetails = async (req, res) => {
   return res.status(200).json({ booking, riderDetails });
 
 }
-export default { createBooking, getAllBookings, cancelBooking, assignDriver,getBookingDetails };
+const updateStatus=async (req,res)=>{
+  const {id}=req.params;
+  if(!id) return res.status(400).json({ error: "Invalid booking ID" });
+  const rideDetails = await bookingModel.findById(id);
+  if (!rideDetails)
+    return res.status(404).json({ error: "Ride details not found" });
+}
+export default { createBooking, getAllBookings, cancelBooking, assignDriver, updateStatus,getBookingDetails };

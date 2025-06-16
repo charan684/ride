@@ -5,6 +5,7 @@ import {
   Circle,
   CircleUser,
   Clock,
+  LogOut,
   Search,
   Star,
   Wallet,
@@ -12,6 +13,8 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import MapContext from "../../context/AppContext";
+import { useNavigate } from "react-router-dom";
+
 const AdminDashboard = () => {
   const { apiUrl } = useContext(MapContext);
   const [rides, setRides] = useState([]);
@@ -23,6 +26,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("rides");
   const [loading, setLoading] = useState(false);
   // Mock data - replace with your API calls
+  const navigate = useNavigate();
   const handleNewRide = (ride) => {
     console.log("New ride received: ", ride);
     setRides((prevRides) => [...prevRides, ride]);
@@ -31,15 +35,15 @@ const AdminDashboard = () => {
     setLoading(true);
 
     const bookings = await axios.get(`${apiUrl}/bookings`);
-    console.log(bookings);
-    
+    // console.log(bookings);
+
     setRides(bookings.data);
     setLoading(false);
   };
 
   const fetchAvailableDrivers = async () => {
     const drivers = await axios.get(`${apiUrl}/active-riders`);
-    console.log(drivers);
+    // console.log(drivers);
     setDrivers(drivers.data);
   };
   const handleNewDriver = (driver) => {
@@ -53,7 +57,7 @@ const AdminDashboard = () => {
 
     socket.on("new-driver", handleNewDriver);
     socket.on("driver-disconnected", (driverId) => {
-      const updatedDrivers = drivers.filter((d) => d.id!== driverId);
+      const updatedDrivers = drivers.filter((d) => d.id !== driverId);
       setDrivers(updatedDrivers);
     });
     fetchBookings();
@@ -100,7 +104,7 @@ const AdminDashboard = () => {
   const assignDriver = async (rideId, driverId) => {
     setIsAssigning(true);
     console.log(rideId);
-    if(!rideId){
+    if (!rideId) {
       setIsAssigning(false);
       return;
     }
@@ -116,7 +120,7 @@ const AdminDashboard = () => {
 
     setRides((prevRides) =>
       prevRides.map((ride) =>
-        ride.id === rideId
+        ride._id === rideId
           ? { ...ride, status: "assigned", assignedDriver: driverId }
           : ride
       )
@@ -131,6 +135,23 @@ const AdminDashboard = () => {
     setIsAssigning(false);
     setShowDriverModal(false);
     setSelectedRide(null);
+  };
+  // import { useNavigate } from 'react-router-dom';
+
+  const handleLogout = async () => {
+    try {
+      // Clear stored authentication data
+      localStorage.removeItem("token");
+
+      // Disconnect socket if connected
+
+      socketInstance.clearSocket();
+
+      // Navigate to SignIn page
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.log("Admin Logout error:", error);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -193,8 +214,17 @@ const AdminDashboard = () => {
                     </span>
                   </div>
 
-                  <button className="relative p-2 text-gray-600 hover:text-gray-900">
+                  {/* <button className="relative p-2 text-gray-600 hover:text-gray-900">
                     <CircleUser className="w-6 h-6" />
+                  </button> */}
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-2 rounded-lg bg-red-100 border border-red-200"
+                  >
+                    <div className="flex flex-row items-center space-x-2">
+                      <LogOut size={16} color="#DC2626" />
+                      <span className="font-medium text-red-700">Logout</span>
+                    </div>
                   </button>
                 </div>
               </div>
@@ -227,7 +257,10 @@ const AdminDashboard = () => {
                       Pending Rides
                     </p>
                     <p className="text-3xl font-bold text-yellow-600">
-                      {rides.length}
+                      {
+                        rides.filter((ride) => ride.status === "requested")
+                          .length
+                      }
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -355,84 +388,91 @@ const AdminDashboard = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {rides.map((ride) => (
-                          <tr key={ride._id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="flex-shrink-0 h-10 w-10">
-                                  <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                    <span className="text-sm font-medium text-gray-700">
-                                      {/* {ride.userName.charAt(0)} */}
+                        {[...rides]
+                          .sort((a, b) => {
+                            const order = { requested: 1, assigned: 2 };
+                            return (
+                              (order[a.status] || 3) - (order[b.status] || 3)
+                            );
+                          })
+                          .map((ride) => (
+                            <tr key={ride._id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <div className="flex-shrink-0 h-10 w-10">
+                                    <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                      <span className="text-sm font-medium text-gray-700">
+                                        {/* {ride.userName.charAt(0)} */}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="ml-4">
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {ride.userName}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {ride.userPhone}
+                                    </div>
+                                    <div className="text-xs text-gray-400">
+                                      {new Date(ride.bookedAt).toLocaleString()}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td className="px-6 py-4">
+                                <div className="space-y-1">
+                                  <div className="flex items-center text-sm">
+                                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    <span className="text-gray-900 truncate max-w-xs">
+                                      {ride.pickupLocation.address}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center text-sm">
+                                    <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                    <span className="text-gray-900 truncate max-w-xs">
+                                      {ride.destination.address}
                                     </span>
                                   </div>
                                 </div>
-                                <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {ride.userName}
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    {ride.userPhone}
-                                  </div>
-                                  <div className="text-xs text-gray-400">
-                                    {new Date(ride.bookedAt).toLocaleString()}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="space-y-1">
-                                <div className="flex items-center text-sm">
-                                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                  <span className="text-gray-900 truncate max-w-xs">
-                                    {ride.pickupLocation.address}
-                                  </span>
-                                </div>
-                                <div className="flex items-center text-sm">
-                                  <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                                  <span className="text-gray-900 truncate max-w-xs">
-                                    {ride.destination.address}
-                                  </span>
-                                </div>
-                                {/* <div className="text-xs text-gray-500">
-                                  {getRideTypeIcon(ride.rideType)}{" "}
-                                  {ride.distance}
-                                </div> */}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                                  ride.status
-                                )}`}
-                              >
-                                {ride.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              ${ride.fare}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              {ride.status === "requested" ? (
-                                <button
-                                  onClick={() => {
-                                    console.log(ride)
-                                    setSelectedRide(ride);
-                                    setShowDriverModal(true);
-                                  }}
-                                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                              </td>
+
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span
+                                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                                    ride.status
+                                  )}`}
                                 >
-                                  Assign Driver
-                                </button>
-                              ) : (
-                                <span className="text-gray-500">
-                                  {ride.assignedDriver
-                                    ? `Driver: ${ride.assignedDriver}`
-                                    : "No action needed"}
+                                  {ride.status}
                                 </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                ${ride.fare}
+                              </td>
+
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                {ride.status === "requested" ? (
+                                  <button
+                                    onClick={() => {
+                                      console.log(ride);
+                                      setSelectedRide(ride);
+                                      setShowDriverModal(true);
+                                    }}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                                  >
+                                    Assign Driver
+                                  </button>
+                                ) : (
+                                  <span className="text-gray-500">
+                                    {ride.driver
+                                      ? `Driver: ${ride.driver}`
+                                      : "Driver Assigned"}
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>
@@ -539,15 +579,19 @@ const AdminDashboard = () => {
                     </h4>
                     <div className="space-y-1 text-sm">
                       <p>
-                        <span className="font-medium">Customer:</span>{" "}
+                        <span className="font-medium">Customer :</span>{" "}
                         {selectedRide.userName}
                       </p>
                       <p>
-                        <span className="font-medium">Pickup:</span>{" "}
-                        {selectedRide.pickup}
+                        <span className="font-medium">Phone :</span>{" "}
+                        {selectedRide.userPhone}
                       </p>
                       <p>
-                        <span className="font-medium">Destination:</span>{" "}
+                        <span className="font-medium">Pickup :<br/></span>{" "}
+                        {selectedRide.pickupLocation.address}
+                      </p>
+                      <p>
+                        <span className="font-medium">Destination :<br/></span>{" "}
                         {selectedRide.destination.address}
                       </p>
                       <p>
@@ -594,9 +638,16 @@ const AdminDashboard = () => {
                           </div>
                         </div>
                         <button
-                          onClick={() => {
-                            console.log(selectedRide,driver);
+                          onClick={async () => {
+                            console.log(selectedRide, driver);
                             assignDriver(selectedRide._id, driver._id);
+                            try {
+                              const response = await axios.post(
+                                `${apiUrl}/bookings/status/${selectedRide._id}`
+                              );
+                            } catch (error) {
+                              console.log("Satus chnage : ", error);
+                            }
                           }}
                           disabled={isAssigning}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition duration-200"
