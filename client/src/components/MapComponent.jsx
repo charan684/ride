@@ -6,7 +6,7 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import MapContext from "../context/AppContext";
 
 function MapComponent({
@@ -15,22 +15,31 @@ function MapComponent({
   handleDestinationClick,
   disableMap,
 }) {
-  const { setDestLocation,destLocation } = useContext(MapContext);
+  const { setDestLocation, destLocation } = useContext(MapContext);
   const [destinationMarker, setDestinationMarker] = useState(null); // Store clicked location
-  setDestinationMarker(destLocation);
+
+  // ✅ Sync marker with context without infinite render
+  useEffect(() => {
+    if (destLocation && destLocation.lat && destLocation.lng) {
+      setDestinationMarker([destLocation.lat, destLocation.lng]);
+    }
+  }, [destLocation]);
+
   // Component to handle map clicks for setting destination
   function DestinationMarkerSetter() {
     useMapEvents({
       click(e) {
         const { lat, lng } = e.latlng;
         setDestinationMarker([lat, lng]);
-        setDestLocation({ lat, lng }); 
-        console.log({ lat, lng });
+        setDestLocation({ lat, lng });
+        console.log("Destination selected:", { lat, lng });
+
         if (!disableMap) {
           handleDestinationClick({ lat, lng });
         }
       },
     });
+
     return destinationMarker ? (
       <Marker position={destinationMarker}>
         <Popup>
