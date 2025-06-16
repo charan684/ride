@@ -4,12 +4,12 @@ import MapContext from '../context/AppContext';
 import {useNavigation} from 'react-router-dom'
 const ProfilePage = () => {
     const {user}=useContext(MapContext);
-    const navigate =useNavigation()
+    // const navigate =useNavigation()
   const handleLogout = () => {
     // alert("Logged out");
     try {
       localStorage.removeItem("token")
-      navigate('/login')
+      // navigate('/login')
     } catch (error) {
       console.log("Error in handleing in logout in profile page :" ,error)
     }
