@@ -73,6 +73,7 @@ export const assignDriver = async (req, res) => {
     return res.status(404).json({ error: "Ride details not found" });
   
   rideDetails.driver = driverId;
+  rideDetails.status = "assigned";
   await rideDetails.save();
   console.log(rideDetails);
   await notifyDriver(rideDetails);

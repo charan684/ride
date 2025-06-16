@@ -52,45 +52,14 @@ const AdminDashboard = () => {
     socket.on("new-ride", handleNewRide);
 
     socket.on("new-driver", handleNewDriver);
+    socket.on("driver-disconnected", (driverId) => {
+      const updatedDrivers = drivers.filter((d) => d.id!== driverId);
+      setDrivers(updatedDrivers);
+    });
     fetchBookings();
 
     fetchAvailableDrivers();
     // Simulate fetching drivers data
-    setDrivers([
-      {
-        id: "D001",
-        name: "Alex Rodriguez",
-        phone: "+1 234-567-9000",
-        vehicle: "Toyota Camry 2022",
-        license: "ABC123",
-        rating: 4.8,
-        status: "busy",
-        location: { lat: 40.7282, lng: -73.9942 },
-        earnings: 145.5,
-      },
-      {
-        id: "D002",
-        name: "Emily Chen",
-        phone: "+1 234-567-9001",
-        vehicle: "Honda Accord 2023",
-        license: "DEF456",
-        rating: 4.9,
-        status: "available",
-        location: { lat: 40.7505, lng: -73.9934 },
-        earnings: 198.75,
-      },
-      {
-        id: "D003",
-        name: "David Brown",
-        phone: "+1 234-567-9002",
-        vehicle: "BMW 3 Series 2021",
-        license: "GHI789",
-        rating: 4.7,
-        status: "available",
-        location: { lat: 40.7128, lng: -74.006 },
-        earnings: 167.25,
-      },
-    ]);
     return () => {
       socket.off("new-ride", handleNewRide);
       socket.off("new-driver", handleNewDriver);
@@ -114,17 +83,17 @@ const AdminDashboard = () => {
   const getNearestDrivers = (rideCoords) => {
     const availableDrivers = drivers;
 
-    // return availableDrivers
-    //   .map((driver) => ({
-    //     ...driver,
-    //     distance: calculateDistance(
-    //       rideCoords.lat,
-    //       rideCoords.lng,
-    //       driver.location.lat,
-    //       driver.location.lng
-    //     ),
-    //   }))
-    //   .sort((a, b) => a.distance - b.distance);
+    return availableDrivers
+      .map((driver) => ({
+        ...driver,
+        distance: calculateDistance(
+          rideCoords.lat,
+          rideCoords.lng,
+          driver.location.lat,
+          driver.location.lng
+        ),
+      }))
+      .sort((a, b) => a.distance - b.distance);
     return drivers;
   };
 

@@ -13,6 +13,7 @@ const verifyToken = (req, res, next) => {
             return res.status(403).json({ message: 'Invalid or expired token' });
         }
         req.user = user;
+        console.log("user:",user);
         next();
     });
 };

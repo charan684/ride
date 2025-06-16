@@ -11,6 +11,7 @@ import bookingRoutes from "./routes/booking.route.js";
 import jwt from "jsonwebtoken";
 import locationRoute from "./routes/location.route.js";
 import User from "./models/user.model.js";
+import driverRoutes from "./routes/driver.route.js";
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
@@ -78,6 +79,9 @@ io.on("connection", (socket) => {
       (driver) => driver.socketId === socket.id
     );
     if (driverIndex !== -1) {
+      if(adminSocketId){
+        io.to(adminSocketId).emit("driver-disconnected", drivers[driverIndex].driverId);
+      }
       drivers.splice(driverIndex, 1);
       console.log("Driver disconnected");
     }
@@ -104,7 +108,7 @@ export const notifyDriver = (message) => {
   console.log(driverSocketId);
   if (driverSocketId) {
     console.log("Sending notification to driver", driverSocketId);
-    io.to(driverSocketId).emit("new-booking", message);
+    io.to(driverSocketId).emit("new-ride", message);
   }
 };
 export const notifyUser = (message) => {
@@ -140,6 +144,7 @@ app.get("/active-riders", async (req, res) => {
 app.use("/api/auth", authRoutes);
 app.post("/api/get-address", geo);
 app.post("/api/get-co-ord", getCoordinates);
+app.use("/driver",driverRoutes);
 app.use("/bookings", bookingRoutes);
 app.use("/locationUpdate", locationRoute);
 server.listen(PORT, () => {
