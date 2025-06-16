@@ -8,10 +8,9 @@ import MapContext from "../context/AppContext";
 import Navbar from "../components/Navbar";
 const HomePage = () => {
   
-  const {apiUrl} = useContext(MapContext);
   
 
-  const { destLocation,setDestLocation } = useContext(MapContext);
+  const { destLocation,setDestLocation,apiUrl } = useContext(MapContext);
   const [userLocation, setUserLocation] = useState(null);
   const [pickupLocation, setPickupLocation] = useState("");
   const [rideType, setRideType] = useState("standard");
@@ -133,7 +132,8 @@ const HomePage = () => {
   };
 
   const fetchCoordsFromAdd = async()=>{
-    const response = await axios.post(`${apiUrl}/getCoordsFromAdd`,{address:destAdd})
+    const response = await axios.post(`${apiUrl}/getCoordsFromAdd`,{address:destAdd});
+    setDestLocation({lat:response.data.lattitude, lng:response.data.longitude});
     console.log(response);
   }
 

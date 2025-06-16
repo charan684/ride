@@ -17,7 +17,9 @@ function MapComponent({
 }) {
   const { setDestLocation, destLocation } = useContext(MapContext);
   const [destinationMarker, setDestinationMarker] = useState(null); // Store clicked location
-
+  if(destLocation && destLocation.lat && destLocation.lng) {
+    setDestinationMarker([destLocation.lat, destLocation.lng]);
+  }
   // ✅ Sync marker with context without infinite render
   useEffect(() => {
     if (destLocation && destLocation.lat && destLocation.lng) {
