@@ -1,7 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import path from "path";
 import http from "http";
 import authRoutes from "./routes/auth.route.js";
 import connectMongoDB from "./db/connectMongoDB.js";
@@ -13,6 +12,7 @@ import locationRoute from "./routes/location.route.js";
 import User from "./models/user.model.js";
 import driverRoutes from "./routes/driver.route.js";
 import userRoutes from "./routes/user.route.js";
+import axios from 'axios';
 dotenv.config();
 const app = express();
 const server = http.createServer(app);

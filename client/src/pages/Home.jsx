@@ -14,7 +14,6 @@ const HomePage = () => {
   const { destLocation,setDestLocation } = useContext(MapContext);
   const [userLocation, setUserLocation] = useState(null);
   const [pickupLocation, setPickupLocation] = useState("");
-  // const [destination, setDestination] = useState("");
   const [rideType, setRideType] = useState("standard");
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
@@ -225,7 +224,6 @@ const HomePage = () => {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder={destFieldPlaceholder}
                   />
-                  <button onClick={fetchCoordsFromAddr}>show on map</button>
                 </div>
                   <button disabled={destAdd ? false :true} className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-50" onClick={fetchCoordsFromAdd}>Show on map</button>
               </div>
