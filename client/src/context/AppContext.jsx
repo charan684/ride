@@ -6,7 +6,7 @@ const MapContext=createContext()
 
 export const MapProvider=({children})=>{
     const [destLocation,setDestLocation]=useState(null);
-    const apiUrl = "http://localhost:8001";
+    const apiUrl = "http://192.168.1.80:8001";
     const [user,setUser] = useState(null);
     const fetchUser = async ()=>{
         const token = localStorage.getItem('token');

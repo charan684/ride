@@ -8,6 +8,7 @@ import RideBookingLoading from './components/LoadingPage.jsx';
 import UserRides from "./pages/user/UserRides.jsx";
 import Navbar from './components/Navbar.jsx'
 import RideBookingSuccess from './components/RideBookingSuccess.jsx'
+import TrackRide from './pages/user/TrackRide.jsx'
 const App = () => {
   return (
     <>
@@ -20,6 +21,7 @@ const App = () => {
       <Route path='/booking/:id' element={<RideBookingLoading />}/>
       <Route path="/my-rides" element={<UserRides />}/>
       <Route path='/success' element={<RideBookingSuccess/>}/> 
+      <Route path='/ride/:id' element={<TrackRide />}/>
     </Routes>
     </>
   )

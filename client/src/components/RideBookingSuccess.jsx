@@ -21,7 +21,7 @@ const navigate = useNavigate();
     }
    setTimeout(()=>{
     navigate("/my-rides");
-   },3000)
+   },3000);
   }, []);
 
   return (

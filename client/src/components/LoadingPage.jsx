@@ -19,7 +19,7 @@ export default function RideBookingLoading() {
     const socket = socketInstance.getSocket("user");
     socket.on("ride-booked", (rideId) => {
       console.log("Ride booked successfully", rideId);
-      navigate("/");
+      navigate("/success");
       
     });
     socket.on("ride-booking-cancelled", (rideId) => {

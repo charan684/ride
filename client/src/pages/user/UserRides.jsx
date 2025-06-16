@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import AppContext from "../../context/AppContext";
+import { useNavigate } from 'react-router-dom';
 
 const statusStyles = {
   requested: "bg-indigo-100 text-indigo-800",
@@ -15,10 +16,16 @@ const statusLabel = (status) => {
 };
 
 const UserRides = ({ userId }) => {
+  const navigate = useNavigate();
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(true);
   const { apiUrl, user } = useContext(AppContext);
   const token = localStorage.getItem('token');
+  const handleTrackLocation = async(rideId)=>{
+    console.log("Tracking location ,",rideId);
+    navigate(`/ride/${rideId}`);
+  }
+
   useEffect(() => {
     const fetchRides = async () => {
       try {
@@ -74,6 +81,11 @@ const UserRides = ({ userId }) => {
               <span className="font-semibold text-black">Booked At:</span>
               <span className="ml-2 text-gray-800">{new Date(ride.bookedAt).toLocaleString()}</span>
             </div>
+            {
+              ride.status === 'assigned' && (
+                <button className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200' onClick={()=>handleTrackLocation(ride._id)}>Track Location</button>
+              )
+            }
           </li>
         ))}
       </ul>

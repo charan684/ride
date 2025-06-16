@@ -85,7 +85,7 @@ const getBookingDetails = async (req, res) => {
   const { id } = req.params;
   const booking = await bookingModel.findById(id);
   if (!booking) return res.status(404).json({ error: "Booking not found" });
-  const riderDetails = await User.findById(booking.driver);
+  const riderDetails = await User.findById(booking.driver).select('-password');
   if(!riderDetails) return res.status(404).json({ error: "Rider details not found" });
   return res.status(200).json({ booking, riderDetails });
 
