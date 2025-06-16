@@ -91,10 +91,21 @@ const getBookingDetails = async (req, res) => {
 
 }
 const updateStatus=async (req,res)=>{
-  const {id}=req.params;
-  if(!id) return res.status(400).json({ error: "Invalid booking ID" });
+  try {
+      const {id}=req.params;
+      const {status}=req.body
+      console.log(status,id)
+      if(!id) return res.status(400).json({ error: "Invalid booking ID" });
   const rideDetails = await bookingModel.findById(id);
   if (!rideDetails)
     return res.status(404).json({ error: "Ride details not found" });
+  console.log(rideDetails)
+  rideDetails.status = status;
+  await rideDetails.save();
+  console.log("updated successfully")
+  return res.status(200).json({message:"Status updated successfully"})
+  } catch (error) {
+    return res.status(500).json({message:"Status updating failed"})
+  }
 }
 export default { createBooking, getAllBookings, cancelBooking, assignDriver, updateStatus,getBookingDetails };

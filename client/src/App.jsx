@@ -8,7 +8,11 @@ import RideBookingLoading from './components/LoadingPage.jsx';
 import UserRides from "./pages/user/UserRides.jsx";
 import Navbar from './components/Navbar.jsx'
 import RideBookingSuccess from './components/RideBookingSuccess.jsx'
+<<<<<<< Updated upstream
 import TrackRide from './pages/user/TrackRide.jsx'
+=======
+import UserProfilePage from './pages/Profile.jsx'
+>>>>>>> Stashed changes
 const App = () => {
   return (
     <>
@@ -17,6 +21,7 @@ const App = () => {
       <Route path='/' element={<Home/>}/>
       <Route path='/signup' element={<SignUp/>}/>
       <Route path='/login' element={<Login/>}/>
+      <Route path='/profile' element={<UserProfilePage/>}/>
       <Route path="/admin/" element={<AdminHome />}/>
       <Route path='/booking/:id' element={<RideBookingLoading />}/>
       <Route path="/my-rides" element={<UserRides />}/>

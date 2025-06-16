@@ -5,7 +5,7 @@ const router = express.Router();
 router.post('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { lat, lng } = req.body.newDriverLocation;
+        const { lat, lng } = req.body;
 
         const user = await User.findOneAndUpdate(
             { id },
