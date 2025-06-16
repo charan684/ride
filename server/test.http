@@ -1,1 +1,10 @@
 GET http://localhost:8000/bookings/
+
+
+###
+
+GET http://192.168.1.80:8001/driver/assigned-rides
+headers:
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODRjMTI1MmZkOGYyYmEyMzgzYWZmNzEiLCJpYXQiOjE3NTAwNTYwOTgsImV4cCI6MTc1MTM1MjA5OH0.83XkQtIB7R_cUh9EBljWPjYj-6J3yZFMNOh23BCu-K0
+
+

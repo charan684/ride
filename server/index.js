@@ -12,6 +12,7 @@ import jwt from "jsonwebtoken";
 import locationRoute from "./routes/location.route.js";
 import User from "./models/user.model.js";
 import driverRoutes from "./routes/driver.route.js";
+import userRoutes from "./routes/user.route.js";
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
@@ -145,6 +146,7 @@ app.use("/api/auth", authRoutes);
 app.post("/api/get-address", geo);
 app.post("/api/get-co-ord", getCoordinates);
 app.use("/driver",driverRoutes);
+app.use("/user",userRoutes);
 app.use("/bookings", bookingRoutes);
 app.use("/locationUpdate", locationRoute);
 server.listen(PORT, () => {
