@@ -199,6 +199,8 @@ app.post('/getCoordsFromAdd', async (req, res) => {
   }
 });
 
+
+
 server.listen(PORT, () => {
   console.log(`Server is running at the port ${PORT}`);
   connectMongoDB();

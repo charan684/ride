@@ -1,21 +1,18 @@
 import React from 'react';
-
+import { useContext } from 'react';
+import MapContext from '../context/AppContext';
+import {useNavigation} from 'react-router-dom'
 const ProfilePage = () => {
-    // const {}
-  // Dummy user data
-  const user = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    avatarUrl: "/avatar-placeholder.png", // Optional avatar
-  };
-
-  const handleEdit = () => {
-    alert("Edit profile clicked");
-  };
-
+    const {user}=useContext(MapContext);
+    const navigate =useNavigation()
   const handleLogout = () => {
-    alert("Logged out");
+    // alert("Logged out");
+    try {
+      localStorage.removeItem("token")
+      navigate('/login')
+    } catch (error) {
+      console.log("Error in handleing in logout in profile page :" ,error)
+    }
   };
 
   return (
@@ -40,7 +37,7 @@ const ProfilePage = () => {
             className="w-24 h-24 rounded-full mx-auto mb-4"
           />
           <h1 className="text-2xl font-semibold mb-2 text-gray-800">
-            {user.name}
+            {user.username}
           </h1>
           <ul className="text-gray-600 mb-6 space-y-2 text-left">
             <li>
