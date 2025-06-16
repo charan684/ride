@@ -64,6 +64,25 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("driver-location",async(data)=>{
+    console.log(data);
+    const {location,userId,riderId,rideId} = data;
+    if(userId){
+      const userIndex = users.find((u) => u.userId === userId);
+      if(!userIndex){
+        console.log("User is not tracking");
+        return;
+      }
+      io.to(userIndex.socketId).emit("driver-location", {location, riderId, rideId});
+    }
+    const driver = User.findOne({_id: userId});
+    if(driver){
+      console.log("Driver location: ", location);
+     driver.location = location;
+     await driver.save();
+    }
+    console.log("Driver location: ", location);
+  })
   socket.on("disconnect", () => {
     if (adminSocketId === socket.id) {
       adminSocketId = null;
@@ -149,6 +168,41 @@ app.use("/driver",driverRoutes);
 app.use("/user",userRoutes);
 app.use("/bookings", bookingRoutes);
 app.use("/locationUpdate", locationRoute);
+app.post('/getCoords', async (req, res) => {
+  const { address } = req.body;
+
+  if (!address) {
+    return res.status(400).json({ error: 'Address is required' });
+  }
+
+  try {
+    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+      params: {
+        q: address,
+        format: 'json',
+        limit: 1,
+      },
+      headers: {
+        'User-Agent': 'YourAppName/1.0',
+      },
+    });
+
+    if (response.data.length === 0) {
+      return res.status(404).json({ error: 'Address not found' });
+    }
+
+    const { lat, lon } = response.data[0];
+    res.json({ latitude: lat, longitude: lon });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: 'Something went wrong' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server listening on http://localhost:${PORT}`);
+});
+
 server.listen(PORT, () => {
   console.log(`Server is running at the port ${PORT}`);
   connectMongoDB();

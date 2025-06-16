@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver Navigation</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { height: 100vh; width: 100vw; }
+    .navigation-info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      z-index: 1000;
+      font-family: Arial, sans-serif;
+    }
+    .distance-info {
+      font-size: 14px;
+      color: #666;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="navigation-info" class="navigation-info">
+    <div id="instruction">Getting directions...</div>
+    <div id="distance" class="distance-info"></div>
+  </div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+  <script>
+    // Parse query parameters
+    const queryParams = new URLSearchParams(window.location.search);
+
+    const driverLat = parseFloat(queryParams.get('driverLat')) || 40.7128;
+    const driverLng = parseFloat(queryParams.get('driverLng')) || -74.006;
+    const customerLat = parseFloat(queryParams.get('customerLat')) || 40.72;
+    const customerLng = parseFloat(queryParams.get('customerLng')) || -74.01;
+
+    // Initialize map
+    const map = L.map('map').setView([driverLat, driverLng], 14);
+
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Custom markers
+    const driverIcon = L.divIcon({
+      html: '<div style="background-color: #3B82F6; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; position: relative;"><div style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-size: 12px;">🚗</div></div>',
+      iconSize: [20, 20],
+      className: 'custom-div-icon'
+    });
+
+    const customerIcon = L.divIcon({
+      html: '<div style="background-color: #EF4444; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; position: relative;"><div style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-size: 12px;">📍</div></div>',
+      iconSize: [20, 20],
+      className: 'custom-div-icon'
+    });
+
+    const driverMarker = L.marker([driverLat, driverLng], { icon: driverIcon }).addTo(map).bindPopup("Driver Location");
+    const customerMarker = L.marker([customerLat, customerLng], { icon: customerIcon }).addTo(map).bindPopup("Customer Location");
+
+    // Route
+    const routingControl = L.Routing.control({
+      waypoints: [
+        L.latLng(driverLat, driverLng),
+        L.latLng(customerLat, customerLng)
+      ],
+      routeWhileDragging: false,
+      createMarker: () => null,
+      lineOptions: {
+        styles: [{ color: '#3B82F6', weight: 6, opacity: 0.8 }]
+      }
+    }).on('routesfound', function(e) {
+      const summary = e.routes[0].summary;
+      const distance = (summary.totalDistance / 1000).toFixed(1) + ' km';
+      const time = Math.round(summary.totalTime / 60) + ' min';
+      document.getElementById('distance').textContent = `${distance} • ${time}`;
+
+      const firstInstruction = e.routes[0].instructions?.[0]?.text || 'Head towards destination';
+      document.getElementById('instruction').textContent = firstInstruction;
+    }).addTo(map);
+
+    // Optional: simulate driver location update
+    window.updateDriverLocation = function(lat, lng) {
+      driverMarker.setLatLng([lat, lng]);
+      routingControl.setWaypoints([
+        L.latLng(lat, lng),
+        L.latLng(customerLat, customerLng)
+      ]);
+    };
+  </script>
+</body>
+</html>

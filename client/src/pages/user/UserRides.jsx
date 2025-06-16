@@ -1,7 +1,7 @@
-import React, { useContext, useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useContext, useEffect, useState } from "react";
+import axios from "axios";
 import AppContext from "../../context/AppContext";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 const statusStyles = {
   requested: "bg-indigo-100 text-indigo-800",
@@ -12,7 +12,7 @@ const statusStyles = {
 };
 
 const statusLabel = (status) => {
-  return status.replace('_', ' ').toUpperCase();
+  return status.replace("_", " ").toUpperCase();
 };
 
 const UserRides = ({ userId }) => {
@@ -20,11 +20,23 @@ const UserRides = ({ userId }) => {
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(true);
   const { apiUrl, user } = useContext(AppContext);
-  const token = localStorage.getItem('token');
-  const handleTrackLocation = async(rideId)=>{
-    console.log("Tracking location ,",rideId);
-    navigate(`/ride/${rideId}`);
-  }
+  const token = localStorage.getItem("token");
+  // const handleTrackLocation = async (rideId) => {
+  //   console.log("Tracking location ,", rideId);
+  //   navigate(`/ride/${rideId}`);
+  // };
+  const handleTrackLocation = (ride) => {
+  const driverLat = ride.driver?.location?.coordinates?.[1] || 17.437462;
+  const driverLng = ride.driver?.location?.coordinates?.[0] || 78.448288;
+  const customerLat = ride.destination?.coordinates?.lat || 17.2630;
+  const customerLng = ride.destination?.coordinates?.lng || 78.2330;
+
+  const url = `/Navigation.html?driverLat=${driverLat}&driverLng=${driverLng}&customerLat=${customerLat}&customerLng=${customerLng}`;
+
+  // Open navigation.html in a new tab
+  window.open(url, "_blank");
+};
+
 
   useEffect(() => {
     const fetchRides = async () => {
@@ -36,7 +48,7 @@ const UserRides = ({ userId }) => {
         });
         setRides(res.data);
       } catch (err) {
-        console.error('Failed to fetch rides', err);
+        console.error("Failed to fetch rides", err);
       } finally {
         setLoading(false);
       }
@@ -62,30 +74,48 @@ const UserRides = ({ userId }) => {
 
   return (
     <div className="max-w-xl mx-auto mt-12 p-6 bg-gray-50 rounded-xl shadow">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Your Rides</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+        Your Rides
+      </h2>
       <ul className="space-y-6">
-        {rides.map(ride => (
-          <li key={ride._id} className="bg-white rounded-lg shadow p-5 hover:shadow-lg transition-shadow">
-            <span className={`inline-block px-3 py-1 mb-3 rounded-full text-sm font-semibold ${statusStyles[ride.status]}`}>
+        {rides.map((ride) => (
+          <li
+            key={ride._id}
+            className="bg-white rounded-lg shadow p-5 hover:shadow-lg transition-shadow"
+          >
+            <span
+              className={`inline-block px-3 py-1 mb-3 rounded-full text-sm font-semibold ${
+                statusStyles[ride.status]
+              }`}
+            >
               {statusLabel(ride.status)}
             </span>
             <div className="mb-1">
               <span className="font-semibold text-black">Pickup:</span>
-              <span className="ml-2 text-gray-800">{ride.pickupLocation?.address || "N/A"}</span>
+              <span className="ml-2 text-gray-800">
+                {ride.pickupLocation?.address || "N/A"}
+              </span>
             </div>
             <div className="mb-1">
               <span className="font-semibold text-black">Destination:</span>
-              <span className="ml-2 text-gray-800">{ride.destination?.address || "N/A"}</span>
+              <span className="ml-2 text-gray-800">
+                {ride.destination?.address || "N/A"}
+              </span>
             </div>
             <div className="mb-1">
               <span className="font-semibold text-black">Booked At:</span>
-              <span className="ml-2 text-gray-800">{new Date(ride.bookedAt).toLocaleString()}</span>
+              <span className="ml-2 text-gray-800">
+                {new Date(ride.bookedAt).toLocaleString()}
+              </span>
             </div>
-            {
-              ride.status === 'assigned' && (
-                <button className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200' onClick={()=>handleTrackLocation(ride._id)}>Track Location</button>
-              )
-            }
+            {ride.status === "assigned" && (
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                onClick={() => handleTrackLocation(ride)}
+              >
+                Track Navigation
+              </button>
+            )}
           </li>
         ))}
       </ul>
