@@ -9,4 +9,7 @@ export default defineConfig({
     host: '0.0.0.0', // allow access from any network interface
     port: 5173,       // default Vite port, change if needed
   },
+  optimizeDeps: {
+  include: ['react-hot-toast']
+}
 })

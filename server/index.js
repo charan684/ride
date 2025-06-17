@@ -67,7 +67,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("driver-location",async(data)=>{
-    console.log(data);
+    console.log("Got location update",data);
     const {location,userId,riderId,rideId} = data;
     if(userId){
       const userIndex = users.find((u) => u.userId === userId);
@@ -120,7 +120,7 @@ export const notifyAdmin = (message) => {
   }
 };
 
-export const notifyDriver = (message) => {
+export const notifyDriver = async(message) => {
   console.log("Notifying driver: ", message);
   const driverId = message.driver.toString();
   console.log("drivers: ", drivers,driverId);
@@ -132,6 +132,8 @@ export const notifyDriver = (message) => {
     console.log("Sending notification to driver", driverSocketId);
     io.to(driverSocketId).emit("new-ride", message);
   }
+  const driver = await User.findById(message.driver);
+  driver.status = "assigned"
 };
 export const notifyUser = (message) => {
   console.log("Notifying user: ", message);

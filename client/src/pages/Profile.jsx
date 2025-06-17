@@ -1,69 +1,193 @@
-import React from 'react';
-import { useContext } from 'react';
+import { Car, LogOut, Menu } from 'lucide-react';
+import React, { useContext, useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MapContext from '../context/AppContext';
-import {useNavigation} from 'react-router-dom'
-const ProfilePage = () => {
-    const {user}=useContext(MapContext);
-    // const navigate =useNavigation()
+
+const Navbar = () => {
+  const navigate = useNavigate();
+  const { user, setUser } = useContext(MapContext);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileBtnRef = useRef();
+  const profileDropdownRef = useRef();
+
   const handleLogout = () => {
-    // alert("Logged out");
-    try {
-      localStorage.removeItem("token")
-      // navigate('/login')
-    } catch (error) {
-      console.log("Error in handleing in logout in profile page :" ,error)
-    }
+    localStorage.removeItem('token');
+    setUser(null);
+    setProfileOpen(false);
+    navigate('/login');
   };
 
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handleClickOutside = (event) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target) &&
+        profileBtnRef.current &&
+        !profileBtnRef.current.contains(event.target)
+      ) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [profileOpen]);
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      {/* <header className="flex justify-between items-center px-6 py-4 bg-white shadow">
-        <img src="/logo.png" alt="Ride Logo" className="h-10" />
-        <button
-          onClick={handleEdit}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          Edit Profile
-        </button>
-      </header> */}
+    <header className={`bg-white shadow-sm border-b border-gray-100 ${user?.role === 'admin' ? 'hidden' : ''}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+              <Car className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">RideEasy</h1>
+          </div>
 
-      {/* Main Content */}
-      <main className="flex-grow flex items-center justify-center px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
-          <img
-            src={user.avatarUrl}
-            alt="User Avatar"
-            className="w-24 h-24 rounded-full mx-auto mb-4"
-          />
-          <h1 className="text-2xl font-semibold mb-2 text-gray-800">
-            {user.username}
-          </h1>
-          <ul className="text-gray-600 mb-6 space-y-2 text-left">
-            <li>
-              <span className="font-medium">Email:</span> {user.email}
-            </li>
-            <li>
-              <span className="font-medium">Phone:</span> {user.phone}
-            </li>
-          </ul>
-          <button
-            onClick={handleLogout}
-            className="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-          >
-            Log Out
-          </button>
+          {/* Desktop Links */}
+          <div className="hidden md:flex items-center space-x-4">
+            <button
+              className="text-gray-600 hover:text-gray-900 font-medium"
+              onClick={() => navigate('/my-rides')}
+            >
+              Your Rides
+            </button>
+
+            {user ? (
+              <>
+                {/* Profile Button */}
+                <div className="relative">
+                  <button
+                    ref={profileBtnRef}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                    onClick={() => setProfileOpen((open) => !open)}
+                  >
+                    Profile
+                  </button>
+                  {profileOpen && (
+                    <div
+                      ref={profileDropdownRef}
+                      className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4"
+                    >
+                      <div className="text-center">
+                        <img
+                          src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}`}
+                          alt="User Avatar"
+                          className="w-16 h-16 rounded-full mx-auto mb-2"
+                        />
+                        <h2 className="text-lg font-semibold text-gray-800">{user.username}</h2>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="text-sm text-gray-500">{user.phone}</p>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="mt-4 w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                      >
+                        Log Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 rounded-lg bg-red-100 border border-red-200"
+                >
+                  <div className="flex flex-row items-center space-x-2">
+                    <LogOut size={16} color="#DC2626" />
+                    <span className="font-medium text-red-700">Logout</span>
+                  </div>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                  onClick={() => navigate('/login')}
+                >
+                  Login
+                </button>
+                <button
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                  onClick={() => navigate('/signup')}
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden">
+            <button onClick={() => setMenuOpen(!menuOpen)}>
+              <Menu className="w-6 h-6 text-gray-700" />
+            </button>
+          </div>
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="py-4 text-center text-sm text-gray-500">
-        <a href="/help" className="hover:underline mx-2">Help</a>
-        <a href="/terms" className="hover:underline mx-2">Terms</a>
-        <a href="/privacy" className="hover:underline mx-2">Privacy</a>
-      </footer>
-    </div>
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="md:hidden mt-2 space-y-2">
+            <button
+              className="block w-full text-left text-gray-700 px-2 py-1"
+              onClick={() => {
+                navigate('/my-rides');
+                setMenuOpen(false);
+              }}
+            >
+              Your Rides
+            </button>
+
+            {user ? (
+              <>
+                <button
+                  className="block w-full text-left text-gray-700 px-2 py-1"
+                  onClick={() => {
+                    setProfileOpen(true);
+                    setMenuOpen(false);
+                  }}
+                >
+                  Profile
+                </button>
+                <button
+                  className="block w-full text-left text-red-700 px-2 py-1"
+                  onClick={() => {
+                    handleLogout();
+                    setMenuOpen(false);
+                  }}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="block w-full text-left text-blue-600 px-2 py-1"
+                  onClick={() => {
+                    navigate('/login');
+                    setMenuOpen(false);
+                  }}
+                >
+                  Login
+                </button>
+                <button
+                  className="block w-full text-left text-blue-600 px-2 py-1"
+                  onClick={() => {
+                    navigate('/signup');
+                    setMenuOpen(false);
+                  }}
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </header>
   );
 };
 
-export default ProfilePage;
+export default Navbar;

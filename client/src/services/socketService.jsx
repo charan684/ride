@@ -28,7 +28,7 @@ class SocketSingleton {
   getSocket(role) {
     // const {apiUrl} = useContext(MapContext);
     if (!this.socket) {
-      this.socket = io(`http://192.168.1.80:8001`, {
+      this.socket = io(`http://192.168.1.22:8001`, {
         autoConnect: true,
         // auth: { token: 'your-auth-token' }, // optional
       });

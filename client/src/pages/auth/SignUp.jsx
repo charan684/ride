@@ -3,15 +3,16 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { User, Lock, Mail, Phone } from "lucide-react";
 import MapContext from "../../context/AppContext";
-
+import {useNavigate} from "react-router-dom";
 const SignupPage = () => {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     phone: "",
     password: "",
   });
-  const {apiUrl} = useContext(MapContext);
+  const {apiUrl,addToast} = useContext(MapContext);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -29,10 +30,11 @@ const SignupPage = () => {
     console.log(formData)
     try {
       await axios.post(`${apiUrl}/api/auth/signup`, formData);
-      alert("Account created successfully! Please check your email for verification.");
+      addToast("Registration successful!","success"); 
+      navigate("/login");
     } catch (error) {
       console.log("Signup error:", error);
-      alert("Registration failed. Please try again.");
+      addToast("Error registering. Please try again.","error");
     } finally {
       setIsLoading(false);
     }
@@ -61,6 +63,7 @@ const SignupPage = () => {
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
+                required
                 className="w-full px-4 py-3 border rounded-lg shadow-sm border-gray-300 bg-white focus:outline-none focus:ring-2"
                 placeholder="Enter your full name"
               />
@@ -75,6 +78,7 @@ const SignupPage = () => {
                 id="email"
                 name="email"
                 value={formData.email}
+                required
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border rounded-lg shadow-sm border-gray-300 bg-white focus:outline-none focus:ring-2"
                 placeholder="Enter your email address"
@@ -90,6 +94,7 @@ const SignupPage = () => {
                 id="phone"
                 name="phone"
                 value={formData.phone}
+                required
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border rounded-lg shadow-sm border-gray-300 bg-white focus:outline-none focus:ring-2"
                 placeholder="Enter your phone number"
@@ -105,6 +110,7 @@ const SignupPage = () => {
                 id="password"
                 name="password"
                 value={formData.password}
+                required
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border rounded-lg shadow-sm border-gray-300 bg-white focus:outline-none focus:ring-2"
                 placeholder="Create a password"

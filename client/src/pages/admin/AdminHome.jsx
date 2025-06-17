@@ -85,8 +85,7 @@ const AdminDashboard = () => {
   };
 
   const getNearestDrivers = (rideCoords) => {
-    const availableDrivers = drivers;
-
+    const availableDrivers = drivers.filter((driver) => driver.status === "free");
     return availableDrivers
       .map((driver) => ({
         ...driver,
@@ -98,7 +97,7 @@ const AdminDashboard = () => {
         ),
       }))
       .sort((a, b) => a.distance - b.distance);
-    return drivers;
+   
   };
 
   const assignDriver = async (rideId, driverId) => {
@@ -136,7 +135,7 @@ const AdminDashboard = () => {
     setShowDriverModal(false);
     setSelectedRide(null);
   };
-  // import { useNavigate } from 'react-router-dom';
+ 
 
   const handleLogout = async () => {
     try {
@@ -171,16 +170,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const getRideTypeIcon = (type) => {
-    switch (type) {
-      case "shared":
-        return "👥";
-      case "premium":
-        return "🚙";
-      default:
-        return "🚗";
-    }
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -214,9 +204,7 @@ const AdminDashboard = () => {
                     </span>
                   </div>
 
-                  {/* <button className="relative p-2 text-gray-600 hover:text-gray-900">
-                    <CircleUser className="w-6 h-6" />
-                  </button> */}
+               
                   <button
                     onClick={handleLogout}
                     className="px-4 py-2 rounded-lg bg-red-100 border border-red-200"
@@ -511,8 +499,8 @@ const AdminDashboard = () => {
                                
                             }`}
                           >
-                            {/* {driver.status} */}
-                            available
+                            {driver.status}
+                            {/* available */}
                           </span>
                         </div>
 

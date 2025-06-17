@@ -6,13 +6,13 @@ import socketInstance from '../../services/socketService';
 import MapContext from '../../context/AppContext';
 const LoginPage = () => {
   const navigate=useNavigate();
-  const {setUser} = useContext(MapContext)
+  const {setUser,setLoading} = useContext(MapContext)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
    
   });
-  const {apiUrl} = useContext(MapContext);
+  const {apiUrl,addToast} = useContext(MapContext);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -54,7 +54,6 @@ const LoginPage = () => {
     e.preventDefault();
 
     
-    
     // if (Object.keys(newErrors).length > 0) {
     //   setErrors(newErrors);
     //   return;
@@ -63,7 +62,6 @@ const LoginPage = () => {
     setIsLoading(true);
     
     try {
-      // Add your login API call here
       const response= await axios.post(`${apiUrl}/api/auth/login`,formData)
       console.log(response)
       setUser(response.data.user);
@@ -73,13 +71,17 @@ const LoginPage = () => {
         const socket = socketInstance.getSocket();
         socket.emit("admin-login",response.data.user);
         navigate("/admin/");
+        addToast("Logged in successfully as admin", "success");
         return;
       }
+      addToast("Logged in successfully", "success");
       navigate('/')
     } catch (error) {
       console.error('Login error:', error);
+      addToast("Login failed. Please check your credentials and try again.", "error");
       // setErrors({ general: 'Login failed. Please try again.' });
     } finally {
+      setLoading(false);
       setIsLoading(false);
     }
   };
@@ -169,6 +171,7 @@ const LoginPage = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
+                required
                 className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ${
                   errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
                 }`}
@@ -188,6 +191,7 @@ const LoginPage = () => {
                 type="password"
                 id="password"
                 name="password"
+                required
                 value={formData.password}
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ${
@@ -214,7 +218,7 @@ const LoginPage = () => {
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
-                  <Lock className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                 
                   Signing in...
                 </div>
               ) : (

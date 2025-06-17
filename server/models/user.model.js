@@ -42,7 +42,11 @@ const userSchema = new mongoose.Schema({
       type: String,
     },
   },
-
+  status:{
+    type:String,
+    enum: ["free", "inactive","assigned"],
+    default: "free",
+  },
   createdAt: {
     type: Date,
     default: Date.now,

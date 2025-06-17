@@ -11,20 +11,23 @@ import RideBookingSuccess from './components/RideBookingSuccess.jsx'
 import TrackRide from './pages/user/TrackRide.jsx'
 import UserProfilePage from './pages/Profile.jsx';
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import TrackLocationMap from "./pages/user/TrackLocation.jsx";
+import { Toaster } from'react-hot-toast';
 const App = () => {
   return (
     <>
+    <div><Toaster/></div>
       <Navbar />
       <Routes>
         <Route path="/" element={<ProtectedRoute forUser="user"><Home /></ProtectedRoute>} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
-        <Route path="/admin/" element={<AdminHome />} />
+        <Route path="/admin/" element={<ProtectedRoute forUser="admin"><AdminHome /></ProtectedRoute>} />
         <Route path="/booking/:id" element={<ProtectedRoute><RideBookingLoading /></ProtectedRoute>} />
         <Route path="/my-rides" element={<ProtectedRoute><UserRides /></ProtectedRoute>} />
         <Route path="/success" element={<RideBookingSuccess />} />
-        <Route path="/ride/:id" element={<ProtectedRoute><TrackRide /></ProtectedRoute>} />
+        <Route path="/track-ride/:id" element={<ProtectedRoute><TrackLocationMap /></ProtectedRoute>} />
       </Routes>
     </>
   );
