@@ -17,12 +17,12 @@ function MapComponent({
 }) {
   const { setDestLocation, destLocation } = useContext(MapContext);
   const [destinationMarker, setDestinationMarker] = useState(null); // Store clicked location
-  if(destLocation && destLocation.lat && destLocation.lng) {
-    setDestinationMarker([destLocation.lat, destLocation.lng]);
-  }
+  
   // ✅ Sync marker with context without infinite render
   useEffect(() => {
+    console.log(destLocation);
     if (destLocation && destLocation.lat && destLocation.lng) {
+      console.log("Destination selected:", { lat: destLocation.lat, lng: destLocation.lng });
       setDestinationMarker([destLocation.lat, destLocation.lng]);
     }
   }, [destLocation]);
@@ -47,7 +47,7 @@ function MapComponent({
         <Popup>
           Destination pinned at:
           <br />
-          {destinationMarker[0].toFixed(4)}, {destinationMarker[1].toFixed(4)}
+          {destinationMarker[0].toFixed(9)}, {destinationMarker[1].toFixed(9)}
         </Popup>
       </Marker>
     ) : null;

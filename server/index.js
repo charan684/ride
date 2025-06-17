@@ -77,7 +77,7 @@ io.on("connection", (socket) => {
       }
       io.to(userIndex.socketId).emit("driver-location", {location, riderId, rideId});
     }
-    const driver = User.findOne({_id: userId});
+    const driver = await User.findOne({_id: userId});
     if(driver){
       console.log("Driver location: ", location);
      driver.location = location;

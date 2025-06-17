@@ -5,7 +5,8 @@ import { Lock, Mail, User } from 'lucide-react';
 import socketInstance from '../../services/socketService';
 import MapContext from '../../context/AppContext';
 const LoginPage = () => {
-  const navigate=useNavigate()
+  const navigate=useNavigate();
+  const {setUser} = useContext(MapContext)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -65,8 +66,9 @@ const LoginPage = () => {
       // Add your login API call here
       const response= await axios.post(`${apiUrl}/api/auth/login`,formData)
       console.log(response)
+      setUser(response.data.user);
       localStorage.setItem("token",response.data.token)
-      if(response.data.role === "admin"){
+      if(response.data.user.role === "admin"){
         console.log("Trying to connect socket")
         const socket = socketInstance.getSocket();
         socket.emit("admin-login",response.data.user);

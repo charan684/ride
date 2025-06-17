@@ -7,7 +7,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user ,setUser} = useContext(MapContext);
   const [menuOpen, setMenuOpen] = useState(false);
-
+  
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
@@ -15,7 +15,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-100">
+   <header className={`bg-white shadow-sm border-b border-gray-100 ${user?.role === 'admin' ? 'hidden' : ''}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}

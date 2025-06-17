@@ -9,21 +9,22 @@ import UserRides from "./pages/user/UserRides.jsx";
 import Navbar from './components/Navbar.jsx'
 import RideBookingSuccess from './components/RideBookingSuccess.jsx'
 import TrackRide from './pages/user/TrackRide.jsx'
-import UserProfilePage from './pages/Profile.jsx'
+import UserProfilePage from './pages/Profile.jsx';
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 const App = () => {
   return (
     <>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<ProtectedRoute forUser="user"><Home /></ProtectedRoute>} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/profile" element={<UserProfilePage />} />
+        <Route path="/profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
         <Route path="/admin/" element={<AdminHome />} />
-        <Route path="/booking/:id" element={<RideBookingLoading />} />
-        <Route path="/my-rides" element={<UserRides />} />
+        <Route path="/booking/:id" element={<ProtectedRoute><RideBookingLoading /></ProtectedRoute>} />
+        <Route path="/my-rides" element={<ProtectedRoute><UserRides /></ProtectedRoute>} />
         <Route path="/success" element={<RideBookingSuccess />} />
-        <Route path="/ride/:id" element={<TrackRide />} />
+        <Route path="/ride/:id" element={<ProtectedRoute><TrackRide /></ProtectedRoute>} />
       </Routes>
     </>
   );

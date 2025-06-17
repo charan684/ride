@@ -133,8 +133,9 @@ const HomePage = () => {
 
   const fetchCoordsFromAdd = async()=>{
     const response = await axios.post(`${apiUrl}/getCoordsFromAdd`,{address:destAdd});
-    setDestLocation({lat:response.data.lattitude, lng:response.data.longitude});
+    setDestLocation({lat:Number(response.data.latitude), lng:Number(response.data.longitude)});
     console.log(response);
+
   }
 
   return (
@@ -209,7 +210,7 @@ const HomePage = () => {
               {/* Destination */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Where to? 
+                  Where to?   Either Pin the location in map or Enter the address 
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -244,8 +245,8 @@ const HomePage = () => {
             {/* Map Placeholder */}
             {userLocation ? (
               <MapComponent
-                latitude={userLocation?.lat.toFixed(4)}
-                longitude={userLocation?.lng.toFixed(4)}
+                latitude={userLocation?.lat.toFixed(9)}
+                longitude={userLocation?.lng.toFixed(9)}
                 handleDestinationClick={handleDestinationClick}
                 disableMap={disableMap}
               />
@@ -259,8 +260,8 @@ const HomePage = () => {
                   <p className="text-sm text-gray-500">
                     {userLocation
                       ? `Your location: ${userLocation.lat.toFixed(
-                          4
-                        )}, ${userLocation.lng.toFixed(4)}`
+                          9
+                        )}, ${userLocation.lng.toFixed(9)}`
                       : "Enable location to see map"}
                   </p>
                 </div>
