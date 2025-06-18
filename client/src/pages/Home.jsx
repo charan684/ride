@@ -88,8 +88,9 @@ const HomePage = () => {
   };
 
   const handleBookRide = async () => {
-    if (!pickupLocation || !destAdd) {
-      alert("Please provide both pickup and destination locations");
+    if (!pickupLocation || !destAdd || !destLocation || !userLocation) {
+      alert("Please provide both pickup and destination locations and address");
+      
       return;
     }
     try {
