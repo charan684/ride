@@ -27,7 +27,7 @@ const App = () => {
         <Route path="/booking/:id" element={<ProtectedRoute><RideBookingLoading /></ProtectedRoute>} />
         <Route path="/my-rides" element={<ProtectedRoute><UserRides /></ProtectedRoute>} />
         <Route path="/success" element={<RideBookingSuccess />} />
-        <Route path="/track-ride/:id" element={<ProtectedRoute><TrackLocationMap /></ProtectedRoute>} />
+        <Route path="/track-ride/:id" element={<ProtectedRoute><TrackRide /></ProtectedRoute>} />
       </Routes>
     </>
   );

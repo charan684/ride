@@ -1,128 +1,125 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import AppContext from "../../context/AppContext";
-import axios from "axios";
-import MapComponent from "./MapComponentForTrack";
-import socketInstance from "../../services/socketService";
-const TrackRide = () => {
-  const { id } = useParams();
-  const { apiUrl } = useContext(AppContext);
-  const [ride, setRide] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [riderLocation, setRiderLocation] = useState(null);
-  const getRideDetails = async () => {
-    try {
-      setLoading(true);
-      console.log("Getting ride details...");
-      const response = await axios.get(`${apiUrl}/bookings/ride-details/${id}`);
-      console.log(response.data);
-      setRide(response.data); // Adjust if your API shape is different
-      setRiderLocation(response.data.riderDetails.location); // Adjust if your API shape is different
-      setLoading(false);
-    } catch (err) {
-      setError("Failed to fetch ride details.");
-      setLoading(false);
-      console.log(err);
-    }
-  };
+import React, { useEffect, useState } from 'react';
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Polyline,
+  useMap
+} from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { useLocation } from 'react-router-dom';
+import socketInstance from '../../services/socketService';
 
+// Custom Icons
+const bikeIcon = new L.Icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/3177/3177361.png',
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  shadowSize: [41, 41],
+  shadowAnchor: [13, 41]
+});
+
+const pinIcon = new L.Icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  shadowSize: [41, 41],
+  shadowAnchor: [13, 41]
+});
+
+// Fit map to route bounds
+function FitBounds({ bounds }) {
+  const map = useMap();
   useEffect(() => {
-    getRideDetails();
-    const socket = socketInstance.getSocket("user");
-    socket.on("rider-location", (data) => {
-      const {location} = data;
-      console.log("Received new location:", location);
-      setRiderLocation(location);
-      // Update the ride's location in the state or update the map accordingly
-    });
+    if (bounds.length > 0) {
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  }, [bounds, map]);
+  return null;
+}
 
-    return () => socket.off("rider-location");
+export default function MapWithRider() {
+  const location = useLocation();
+  const { driverLocation, userLocation } = location.state || {};
+  const [driverLocationCurrent, setDriverLocationCurrent] = useState(driverLocation);
+  const [routeCoords, setRouteCoords] = useState([]);
+
+  // Listen for real-time driver location updates
+  useEffect(() => {
+    const socket = socketInstance.getSocket("user");
+    if (!socket) return;
+
+    const onDriverLocation = (data) => {
+      console.log("Got location update");
+      if (data?.location) {
+        setDriverLocationCurrent(data.location);
+      }
+    };
+
+    socket.on("driver-location", onDriverLocation);
+
+    // Clean up the event listener on unmount
+    return () => socket.off("driver-location", onDriverLocation);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64 text-lg font-semibold">
-        Loading ride details...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-64 text-red-600 font-semibold">
-        {error}
-      </div>
-    );
-  }
-
-  if (!ride) {
-    return null;
-  }
+  // Fetch route from OSRM whenever driver or user location changes
+  useEffect(() => {
+    if (!driverLocationCurrent || !userLocation) return;
+    const fetchRoute = async () => {
+      try {
+        const res = await fetch(
+          `https://router.project-osrm.org/route/v1/driving/${driverLocationCurrent.lng},${driverLocationCurrent.lat};${userLocation.lng},${userLocation.lat}?overview=full&geometries=geojson`
+        );
+        const data = await res.json();
+        if (data?.routes?.[0]?.geometry?.coordinates) {
+          const coords = data.routes[0].geometry.coordinates.map(
+            ([lng, lat]) => [lat, lng]
+          );
+          setRouteCoords(coords);
+        }
+      } catch (err) {
+        console.error("Failed to fetch route:", err);
+      }
+    };
+    fetchRoute();
+  }, [driverLocationCurrent, userLocation]);
 
   return (
-    <div className="flex gap-2 items-center">
-      <div className="max-w-xl ml-10 mt-8 bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold mb-4 text-indigo-700">
-          Track Your Ride
-        </h2>
-        <div className="mb-4">
-          <div className="mb-2">
-            <span className="font-semibold text-gray-700">Status:</span>
-            <span className="ml-2 text-green-600 capitalize">
-              {ride.booking.status}
-            </span>
-          </div>
-          <div className="mb-2">
-            <span className="font-semibold text-gray-700">Booked At:</span>
-            <span className="ml-2 text-gray-600">
-              {new Date(ride.booking.bookedAt).toLocaleString()}
-            </span>
-          </div>
-          <div className="mb-2">
-            <span className="font-semibold text-gray-700">Pickup:</span>
-            <span className="ml-2 text-gray-600">
-              {ride.booking.pickupLocation?.address}
-            </span>
-          </div>
-          <div className="mb-2">
-            <span className="font-semibold text-gray-700">Destination:</span>
-            <span className="ml-2 text-gray-600">
-              {ride.booking.destination?.address}
-            </span>
-          </div>
-        </div>
+    <div style={{ height: '100vh', width: '100%' }}>
+      <MapContainer
+        center={ [userLocation.lat, userLocation.lng] }
+        zoom={14}
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          attribution='&copy; OpenStreetMap contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
-        {ride.riderDetails && (
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-800 mb-1">Driver Details</h3>
-            <div>
-              <span className="text-gray-700">Name:</span>
-              <span className="ml-2 text-gray-600">
-                {ride.riderDetails.username}
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-700">Phone:</span>
-              <span className="ml-2 text-gray-600">
-                {ride.riderDetails.phone}
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-700">Email:</span>
-              <span className="ml-2 text-gray-600">
-                {ride.riderDetails.email}
-              </span>
-            </div>
-          </div>
+        {routeCoords.length > 0 && (
+          <>
+            <Polyline positions={routeCoords} color="blue" weight={5} />
+            <FitBounds bounds={routeCoords} />
+          </>
         )}
-      </div>
-      <MapComponent
-        pickupLocation={ride.booking.pickupLocation}
-        riderLocation={riderLocation}
-      />
+
+        {driverLocationCurrent && (
+          <Marker
+            position={[driverLocationCurrent.lat, driverLocationCurrent.lng]}
+            icon={bikeIcon}
+          />
+        )}
+
+        {userLocation && (
+          <Marker
+            position={[userLocation.lat, userLocation.lng]}
+            icon={pinIcon}
+          />
+        )}
+      </MapContainer>
     </div>
   );
-};
-
-export default TrackRide;
+}

@@ -69,8 +69,10 @@ io.on("connection", (socket) => {
   socket.on("driver-location",async(data)=>{
     console.log("Got location update",data);
     const {location,userId,riderId,rideId} = data;
+  
+    
     if(userId){
-      const userIndex = users.find((u) => u.userId === userId);
+      const userIndex = users.find((u) => u.userId === userId._id);
       if(!userIndex){
         console.log("User is not tracking");
         return;

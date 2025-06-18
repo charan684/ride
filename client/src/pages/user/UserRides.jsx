@@ -4,7 +4,6 @@ import AppContext from "../../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import socketInstance from "../../services/socketService";
 
-// Status badge styles
 const statusStyles = {
   requested: "bg-indigo-100 text-indigo-800 border-indigo-200",
   assigned: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -32,25 +31,35 @@ const UserRides = ({ userId }) => {
       setDriverLocation(driverLoc);
       const customerLat = ride.destination?.coordinates?.lat || 17.263;
       const customerLng = ride.destination?.coordinates?.lng || 78.233;
-      console.log("Driver Location at :",driverLoc)
-      const url = `/Navigation.html?driverLat=${driverLoc?.lat}&driverLng=${driverLoc?.lng}&customerLat=${customerLat}&customerLng=${customerLng}`;
-      window.open(url, "_blank");
+      // const url = `/Navigation.html?driverLat=${driverLoc.lat}&driverLng=${driverLoc.lng}&customerLat=${customerLat}&customerLng=${customerLng}`;
+      // window.open(url, "_blank");
+      navigate(`/track-ride/${ride._id}`, {
+        state: {
+          userLocation: { lat: customerLat, lng: customerLng },
+          driverLocation: { lat: driverLoc.lat, lng: driverLoc.lng },
+        },
+      });
     } catch (err) {
-      alert("Unable to fetch driver location.");
-      console.log("Error at rider location details : ",err);
+      console.log(err);
+      // alert("Unable to fetch driver location.");
     }
   };
 
   // Fetch ride details
+
   const getRideDetails = async (id) => {
     try {
+      console.log("Getting ride details...");
+      console.log(id);
       const response = await axios.get(`${apiUrl}/bookings/ride-details/${id}`);
+      console.log(response.data);
       return response.data;
     } catch (err) {
-      throw new Error("Failed to fetch ride details.");
+      // setError("Failed to fetch ride details.");
+      setLoading(false);
+      console.log(err);
     }
   };
-
   useEffect(() => {
     const fetchRides = async () => {
       try {
@@ -67,23 +76,16 @@ const UserRides = ({ userId }) => {
 
     fetchRides();
 
-    // Listen for driver location updates
-    const socket = socketInstance.getSocket("user");
-    socket?.on("driver-location", (data) => {
-      setDriverLocation(data.location);
-    });
-
-    return () => {
-      socket?.off("driver-location");
-    };
-    // eslint-disable-next-line
+    
   }, []);
 
   if (loading) {
     return (
       <div className="w-full mt-16 flex justify-center items-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-        <span className="text-gray-600 text-lg font-medium">Loading your rides...</span>
+        <span className="text-gray-600 text-lg font-medium">
+          Loading your rides...
+        </span>
       </div>
     );
   }
@@ -114,7 +116,9 @@ const UserRides = ({ userId }) => {
           >
             {/* Status badge */}
             <span
-              className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold border ${statusStyles[ride.status]}`}
+              className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold border ${
+                statusStyles[ride.status]
+              }`}
             >
               {statusLabel(ride.status)}
             </span>
@@ -124,14 +128,22 @@ const UserRides = ({ userId }) => {
               <div className="flex-1">
                 <div className="mb-2">
                   <span className="font-semibold text-gray-900">Pickup:</span>
-                  <span className="ml-2 text-gray-700">{ride.pickupLocation?.address || "N/A"}</span>
+                  <span className="ml-2 text-gray-700">
+                    {ride.pickupLocation?.address || "N/A"}
+                  </span>
                 </div>
                 <div className="mb-2">
-                  <span className="font-semibold text-gray-900">Destination:</span>
-                  <span className="ml-2 text-gray-700">{ride.destination?.address || "N/A"}</span>
+                  <span className="font-semibold text-gray-900">
+                    Destination:
+                  </span>
+                  <span className="ml-2 text-gray-700">
+                    {ride.destination?.address || "N/A"}
+                  </span>
                 </div>
                 <div className="mb-2">
-                  <span className="font-semibold text-gray-900">Booked At:</span>
+                  <span className="font-semibold text-gray-900">
+                    Booked At:
+                  </span>
                   <span className="ml-2 text-gray-700">
                     {new Date(ride.bookedAt).toLocaleString("en-IN", {
                       dateStyle: "medium",
@@ -142,7 +154,9 @@ const UserRides = ({ userId }) => {
                 {ride.riderDetails && (
                   <div className="mb-2">
                     <span className="font-semibold text-gray-900">Driver:</span>
-                    <span className="ml-2 text-gray-700">{ride.riderDetails.name || "Assigned"}</span>
+                    <span className="ml-2 text-gray-700">
+                      {ride.riderDetails.name || "Assigned"}
+                    </span>
                   </div>
                 )}
               </div>
