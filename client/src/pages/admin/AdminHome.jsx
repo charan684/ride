@@ -92,8 +92,8 @@ const AdminDashboard = () => {
         distance: calculateDistance(
           rideCoords.lat,
           rideCoords.lng,
-          driver.location.lat,
-          driver.location.lng
+          driver?.location?.lat,
+          driver?.location?.lng
         ),
       }))
       .sort((a, b) => a.distance - b.distance);

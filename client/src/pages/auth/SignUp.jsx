@@ -28,6 +28,7 @@ const SignupPage = () => {
     e.preventDefault();
     setIsLoading(true);
     console.log(formData)
+    console.log(apiUrl)
     try {
       await axios.post(`${apiUrl}/api/auth/signup`, formData);
       addToast("Registration successful!","success"); 
