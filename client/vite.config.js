@@ -8,6 +8,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0', // allow access from any network interface
     port: 5173,       // default Vite port, change if needed
+    allowedHosts: ['ride-sgor.onrender.com'],
   },
   optimizeDeps: {
   include: ['react-hot-toast']
