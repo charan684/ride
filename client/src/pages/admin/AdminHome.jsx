@@ -56,6 +56,16 @@ const AdminDashboard = () => {
     socket.on("new-ride", handleNewRide);
 
     socket.on("new-driver", handleNewDriver);
+    socket.on("ride-complete", (data) => {
+      const {rideId} = data;
+      const updatedRides = rides.map((ride) => {
+        if (ride._id === rideId) {
+          return { ...ride, status: "completed" };
+        }
+        return ride;
+      });
+      setRides(updatedRides);
+    });
     socket.on("driver-disconnected", (driverId) => {
       const updatedDrivers = drivers.filter((d) => d.id !== driverId);
       setDrivers(updatedDrivers);

@@ -66,6 +66,16 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("ride-complete",data=>{
+    const {rideId,userId} = data;
+    if(adminSocketId){
+      io.to(adminSocketId).emit("ride-complete", {rideId,userId});
+    }
+    const userIndex = users.find((u) => u.userId === userId);
+    if(userIndex){
+      io.to(userIndex.socketId).emit("ride-complete", {rideId,userId});
+    }
+  })
   socket.on("driver-location",async(data)=>{
     console.log("Got location update",data);
     const {location,userId,riderId,rideId} = data;

@@ -75,7 +75,17 @@ const UserRides = ({ userId }) => {
     };
 
     fetchRides();
-
+    const socket = socketInstance.getSocket("user");
+    socket.on("ride-complete", (data) => {
+      const {rideId} = data;
+      const updatedRides = rides.map((ride) => {
+        if (ride._id === rideId) {
+          return { ...ride, status: "completed" };
+        }
+        return ride;
+      });
+      setRides(updatedRides);
+  })
     
   }, []);
 
