@@ -170,6 +170,8 @@ app.get("/active-riders", async (req, res) => {
     const activeRiderDetails = await Promise.all(
       drivers.map((driver) => User.findById(driver.driverId))
     );
+    console.log(drivers);
+    console.log(activeRiderDetails)
     res.json(activeRiderDetails);
   } catch (error) {
     console.error("Error fetching active riders:", error);
