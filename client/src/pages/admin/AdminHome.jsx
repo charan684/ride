@@ -46,10 +46,20 @@ const AdminDashboard = () => {
     // console.log(drivers);
     setDrivers(drivers.data);
   };
-  const handleNewDriver = (driver) => {
-    console.log("New driver received: ", driver);
-    setDrivers((prevDrivers) => [...prevDrivers, driver]);
-  };
+
+  // const handleNewDriver = (driver) => {
+  //   console.log("New driver received: ", driver);
+  //   setDrivers((prevDrivers) => [...prevDrivers, driver]);
+  // };
+const handleNewDriver = (driver) => {
+  setDrivers((prevDrivers) => {
+    const exists = prevDrivers.some((d) => d._id === driver._id);
+    if (!exists) {
+      return [...prevDrivers, driver];
+    }
+    return prevDrivers;
+  });
+};
 
   useEffect(() => {
     const socket = socketInstance.getSocket("admin");
@@ -57,7 +67,7 @@ const AdminDashboard = () => {
 
     socket.on("new-driver", handleNewDriver);
     socket.on("ride-complete", (data) => {
-      const {rideId} = data;
+      const { rideId } = data;
       const updatedRides = rides.map((ride) => {
         if (ride._id === rideId) {
           return { ...ride, status: "completed" };
@@ -95,7 +105,9 @@ const AdminDashboard = () => {
   };
 
   const getNearestDrivers = (rideCoords) => {
-    const availableDrivers = drivers.filter((driver) => driver.status === "free");
+    const availableDrivers = drivers.filter(
+      (driver) => driver.status === "free"
+    );
     return availableDrivers
       .map((driver) => ({
         ...driver,
@@ -107,7 +119,6 @@ const AdminDashboard = () => {
         ),
       }))
       .sort((a, b) => a.distance - b.distance);
-   
   };
 
   const assignDriver = async (rideId, driverId) => {
@@ -126,7 +137,6 @@ const AdminDashboard = () => {
     console.log(response);
     // Simulate API call
     // await new Promise((resolve) => setTimeout(resolve, 1500));
-
     setRides((prevRides) =>
       prevRides.map((ride) =>
         ride._id === rideId
@@ -134,18 +144,15 @@ const AdminDashboard = () => {
           : ride
       )
     );
-
     setDrivers((prevDrivers) =>
       prevDrivers.map((driver) =>
         driver.id === driverId ? { ...driver, status: "busy" } : driver
       )
     );
-
     setIsAssigning(false);
     setShowDriverModal(false);
     setSelectedRide(null);
   };
- 
 
   const handleLogout = async () => {
     try {
@@ -179,9 +186,6 @@ const AdminDashboard = () => {
         return "bg-gray-100 text-gray-800";
     }
   };
-
-
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -214,7 +218,6 @@ const AdminDashboard = () => {
                     </span>
                   </div>
 
-               
                   <button
                     onClick={handleLogout}
                     className="px-4 py-2 rounded-lg bg-red-100 border border-red-200"
@@ -332,37 +335,6 @@ const AdminDashboard = () => {
 
               {activeTab === "rides" && (
                 <div className="p-6">
-                  {/* Filters and Search */}
-                  {/* <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                    <div className="flex-1">
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Search className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="text"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Search rides by user, pickup, or destination..."
-                        />
-                      </div>
-                    </div>
-
-                    <select
-                      value={filterStatus}
-                      onChange={(e) => setFilterStatus(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="all">All Status</option>
-                      <option value="pending">Pending</option>
-                      <option value="assigned">Assigned</option>
-                      <option value="in-progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div> */}
-
                   {/* Rides Table */}
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -418,18 +390,60 @@ const AdminDashboard = () => {
                                 </div>
                               </td>
 
-                              <td className="px-6 py-4">
+                              {/* <td className="px-6 py-4">
                                 <div className="space-y-1">
                                   <div className="flex items-center text-sm">
                                     <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                                     <span className="text-gray-900 truncate max-w-xs">
-                                      {ride.pickupLocation.address}
+                                      {ride.locations[0].lat}
                                     </span>
                                   </div>
                                   <div className="flex items-center text-sm">
                                     <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
                                     <span className="text-gray-900 truncate max-w-xs">
-                                      {ride.destination.address}
+                                      {ride.locations[ride.locations.length - 1].lat}
+                                    </span>
+                                  </div>
+                                </div>
+                              </td> */}
+                              <td className="px-6 py-4">
+                                <div className="space-y-1 text-sm text-gray-900">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-1">
+                                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                      <span className="font-medium truncate max-w-[120px]">
+                                        From :
+                                      </span>
+                                    </div>
+                                    <span className="truncate max-w-[140px] text-gray-800">
+                                      {ride.locations[0].lat},{" "}
+                                      {ride.locations[0].lng}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex flex-row items-center justify-center text-gray-400 text-xs">
+                                    <div className="w-full h-px border-t border-dashed border-black mt-1 mb-1"></div>
+                                  </div>
+
+                                  <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-1">
+                                      <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                      <span className="font-medium truncate max-w-[120px]">
+                                        To :
+                                      </span>
+                                    </div>
+                                    <span className="truncate max-w-[140px] text-gray-800">
+                                      {
+                                        ride.locations[
+                                          ride.locations.length - 1
+                                        ].lat
+                                      }
+                                      ,{" "}
+                                      {
+                                        ride.locations[
+                                          ride.locations.length - 1
+                                        ].lng
+                                      }
                                     </span>
                                   </div>
                                 </div>
@@ -483,9 +497,9 @@ const AdminDashboard = () => {
                     Driver Management
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {drivers.map((driver) => (
+                    {drivers.map((driver,index) => (
                       <div
-                        key={driver._id}
+                        key={index}
                         className="bg-gray-50 rounded-xl p-6 border border-gray-200"
                       >
                         <div className="flex items-center justify-between mb-4">
@@ -585,12 +599,16 @@ const AdminDashboard = () => {
                         {selectedRide.userPhone}
                       </p>
                       <p>
-                        <span className="font-medium">Pickup :<br/></span>{" "}
-                        {selectedRide.pickupLocation.address}
-                      </p>
+                        <span className="font-medium">
+                          Pickup :
+                        </span>{" "}
+                        {selectedRide.locations[0].lat} - {selectedRide.locations[0].lng}
+                      </p> 
                       <p>
-                        <span className="font-medium">Destination :<br/></span>{" "}
-                        {selectedRide.destination.address}
+                        <span className="font-medium">
+                          Destination :
+                        </span>{" "}
+                        {selectedRide.locations[selectedRide.locations.length-1].lat} - {selectedRide.locations[selectedRide.locations.length-1].lng}
                       </p>
                       <p>
                         <span className="font-medium">Fare:</span> $
@@ -604,7 +622,7 @@ const AdminDashboard = () => {
                   </h4>
                   <div className="space-y-3">
                     {getNearestDrivers(
-                      selectedRide.pickupLocation.coordinates
+                      selectedRide.locations[0]
                     ).map((driver) => (
                       <div
                         key={driver._id}

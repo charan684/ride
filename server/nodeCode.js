@@ -1,10 +1,10 @@
 import NodeGeocoder from 'node-geocoder';
 const geocoder = NodeGeocoder({
-   provider: 'openstreetmap',
-  httpAdapter: 'https', // optional
+   provider: 'locationiq',
+  apiKey:'pk.bae11811fecaf67199c3b309eace0fb0',
   formatter: null,
   // Add this!
-  userAgent: 'rideeasy-app-backend (contact: youremail@example.com)',
+  
 });
 export const geo= async (req, res) => {
   const { lat, lon } = req.body;

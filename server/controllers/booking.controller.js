@@ -1,41 +1,75 @@
 import { notifyAdmin, notifyUser, notifyDriver } from "../index.js";
 import bookingModel from "../models/ride.model.js";
 import User from "../models/user.model.js";
+// const createBooking = async (req, res) => {
+//   console.log("Booking raid");
+//   const { source, destination, address, userAddress } = req.body;
+//   // console.log(source,destination,userAddress);
+//   const decoded = req.user;
+//   // console.log(decoded);
+//   const user = await User.findById(decoded.userId);
+//   if (!user) return res.status(404).json({ error: "User not found" });
+//   console.log("booking user", user);
+//   const newBooking = await bookingModel.create({
+//     user: decoded.userId,
+//     pickupLocation: {
+//       address: userAddress,
+//       coordinates: { lat: source.lat, lng: source.lng },
+//     },
+//     destination: {
+//       address,
+//       coordinates: { lat: destination.lat, lng: destination.lng },
+//     },
+//     status: "requested",
+//     driver: null,
+//     userName: user.username,
+//     userPhone: user.phone,
+//   });
+//   notifyAdmin({
+//     _id: newBooking._id,
+//     user: decoded.userId,
+//     pickupLocation: {
+//       address: userAddress,
+//       coordinates: { lat: source.lat, lng: source.lng },
+//     },
+//     destination: {
+//       address,
+//       coordinates: { lat: destination.lat, lng: destination.lng },
+//     },
+//     status: "requested",
+//     driver: null,
+//     userName: user.username,
+//     userPhone: user.phone,
+//   });
+//   return res.status(200).json({
+//     message:
+//       "Your booking has been received. We will notify you when the ride is confirmed. Thank you!",
+//     details: { bookingId: newBooking._id },
+//   });
+// };
 const createBooking = async (req, res) => {
   console.log("Booking raid");
-  const { source, destination, address, userAddress } = req.body;
-  // console.log(source,destination,userAddress);
+  const locations = req.body;
+  console.log(locations);
+
   const decoded = req.user;
-  // console.log(decoded);
+  // console.log(decoded.userId);
   const user = await User.findById(decoded.userId);
   if (!user) return res.status(404).json({ error: "User not found" });
   console.log("booking user", user);
   const newBooking = await bookingModel.create({
     user: decoded.userId,
-    pickupLocation: {
-      address: userAddress,
-      coordinates: { lat: source.lat, lng: source.lng },
-    },
-    destination: {
-      address,
-      coordinates: { lat: destination.lat, lng: destination.lng },
-    },
+    locations,
     status: "requested",
     driver: null,
     userName: user.username,
     userPhone: user.phone,
   });
+  console.log(newBooking)
   notifyAdmin({
     _id: newBooking._id,
     user: decoded.userId,
-    pickupLocation: {
-      address: userAddress,
-      coordinates: { lat: source.lat, lng: source.lng },
-    },
-    destination: {
-      address,
-      coordinates: { lat: destination.lat, lng: destination.lng },
-    },
+    locations,
     status: "requested",
     driver: null,
     userName: user.username,
@@ -45,9 +79,9 @@ const createBooking = async (req, res) => {
     message:
       "Your booking has been received. We will notify you when the ride is confirmed. Thank you!",
     details: { bookingId: newBooking._id },
+    newBooking,
   });
 };
-
 export const getAllBookings = async (req, res) => {
   const bookings = await bookingModel.find({});
 

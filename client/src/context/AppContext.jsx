@@ -6,7 +6,8 @@ const MapContext = createContext();
 
 export const MapProvider = ({ children }) => {
   const [destLocation, setDestLocation] = useState(null);
-  const apiUrl = "https://ride-74l5.onrender.com";
+  // const apiUrl = "https://ride-74l5.onrender.com";
+  const apiUrl = "http://localhost:8001";
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const addToast = (message, type) => {

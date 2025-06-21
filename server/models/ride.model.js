@@ -7,20 +7,24 @@ const rideSchema = new mongoose.Schema({
     required: true,
   },
 
-  pickupLocation: {
-    address: { type: String },
-    coordinates: {
-      lat: { type: String, required: true },
-      lng: { type: String, required: true },
-    },
-  },
+  // pickupLocation: {
+  //   address: { type: String },
+  //   coordinates: {
+  //     lat: { type: String, required: true },
+  //     lng: { type: String, required: true },
+  //   },
+  // },
 
-  destination: {
-    address: { type: String },
-    coordinates: {
-      lat: { type: String, required: true },
-      lng: { type: String, required: true },
-    },
+  // destination: {
+  //   address: { type: String },
+  //   coordinates: {
+  //     lat: { type: String, required: true },
+  //     lng: { type: String, required: true },
+  //   },
+  // },
+  locations:{
+    type: Array,
+    default:[],
   },
 
   //   rideType: {

@@ -29,6 +29,7 @@ io.on("connection", (socket) => {
     console.log("Admin logged in", adminSocketId);
   });
   socket.on("user-login", (token) => {
+    console.log("Got a user login");
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const userId = decoded.userId;
@@ -45,8 +46,11 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("driver-login", async (token) => {
+  socket.on("rider-login", async (token) => {
+    console.log(token);
+    
     try {
+      console.log(token);
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const driverId = decoded.userId;
       const socketId = socket.id;
