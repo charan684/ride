@@ -1,7 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import path from "path";
 
 import http from "http";
 import authRoutes from "./routes/auth.route.js";
@@ -14,7 +13,8 @@ import locationRoute from "./routes/location.route.js";
 import User from "./models/user.model.js";
 import driverRoutes from "./routes/driver.route.js";
 import userRoutes from "./routes/user.route.js";
-import axios from 'axios';
+import axios from "axios";
+
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
@@ -37,8 +37,7 @@ io.on("connection", (socket) => {
       users = users.filter((u) => u.userId !== userId);
       users.push({ userId, socketId });
 
-   
-      console.log("Users: ", users);
+      // console.log("Users: ", users);
     } catch (error) {
       console.error("Invalid token:", error.message);
       socket.emit("login-error", "Invalid authentication token");
@@ -47,10 +46,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on("rider-login", async (token) => {
-    console.log(token);
-    
+    // console.log(token);
+
     try {
-      console.log(token);
+      // console.log(token);
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const driverId = decoded.userId;
       const socketId = socket.id;
@@ -62,7 +61,7 @@ io.on("connection", (socket) => {
       }
       drivers = drivers.filter((d) => d.driverId !== driverId);
       drivers.push({ driverId, socketId });
-      console.log("Drivers: ", drivers);
+      // console.log("Drivers: ", drivers);
     } catch (error) {
       console.error("Driver login failed:", error.message);
       socket.emit("login-error", "Invalid authentication token");
@@ -70,37 +69,40 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("ride-complete",data=>{
-    const {rideId,userId} = data;
-    if(adminSocketId){
-      io.to(adminSocketId).emit("ride-complete", {rideId,userId});
+  socket.on("ride-complete", (data) => {
+    const { rideId, userId } = data;
+    if (adminSocketId) {
+      io.to(adminSocketId).emit("ride-complete", { rideId, userId });
     }
     const userIndex = users.find((u) => u.userId === userId);
-    if(userIndex){
-      io.to(userIndex.socketId).emit("ride-complete", {rideId,userId});
+    if (userIndex) {
+      io.to(userIndex.socketId).emit("ride-complete", { rideId, userId });
     }
-  })
-  socket.on("driver-location",async(data)=>{
+  });
+  socket.on("driver-location", async (data) => {
     console.log("Got location update",data);
-    const {location,userId,riderId,rideId} = data;
-  
-    
-    if(userId){
+    const { location, userId, riderId, rideId } = data;
+
+    if (userId) {
       const userIndex = users.find((u) => u.userId === userId._id);
-      if(!userIndex){
+      if (!userIndex) {
         console.log("User is not tracking");
         return;
       }
-      io.to(userIndex.socketId).emit("driver-location", {location, riderId, rideId});
+      io.to(userIndex.socketId).emit("driver-location", {
+        location,
+        riderId,
+        rideId,
+      });
     }
-    const driver = await User.findOne({_id: userId});
-    if(driver){
-      console.log("Driver location: ", location);
-     driver.location = location;
-     await driver.save();
+    const driver = await User.findOne({ _id: userId });
+    if (driver) {
+      // console.log("Driver location: ", location);
+      driver.location = location;
+      await driver.save();
     }
-    console.log("Driver location: ", location);
-  })
+    // console.log("Driver location: ", location);
+  });
   socket.on("disconnect", () => {
     if (adminSocketId === socket.id) {
       adminSocketId = null;
@@ -117,8 +119,11 @@ io.on("connection", (socket) => {
       (driver) => driver.socketId === socket.id
     );
     if (driverIndex !== -1) {
-      if(adminSocketId){
-        io.to(adminSocketId).emit("driver-disconnected", drivers[driverIndex].driverId);
+      if (adminSocketId) {
+        io.to(adminSocketId).emit(
+          "driver-disconnected",
+          drivers[driverIndex].driverId
+        );
       }
       drivers.splice(driverIndex, 1);
       console.log("Driver disconnected");
@@ -129,36 +134,36 @@ io.on("connection", (socket) => {
 const PORT = process.env.PORT || 8001;
 
 export const notifyAdmin = (message) => {
-  console.log("Notifying admin: ", message);
+  // console.log("Notifying admin: ", message);
   if (adminSocketId) {
-    console.log("Sending notification to admin", adminSocketId);
+    // console.log("Sending notification to admin", adminSocketId);
     io.to(adminSocketId).emit("new-ride", message);
   }
 };
 
-export const notifyDriver = async(message) => {
-  console.log("Notifying driver: ", message);
+export const notifyDriver = async (message) => {
+  // console.log("Notifying driver: ", message);
   const driverId = message.driver.toString();
-  console.log("drivers: ", drivers,driverId);
+  // console.log("drivers: ", drivers,driverId);
   const driverSocketId = drivers.find(
     (driver) => driver.driverId === driverId
   )?.socketId;
-  console.log(driverSocketId);
+  // console.log(driverSocketId);
   if (driverSocketId) {
-    console.log("Sending notification to driver", driverSocketId);
+    // console.log("Sending notification to driver", driverSocketId);
     io.to(driverSocketId).emit("new-ride", message);
   }
   const driver = await User.findById(message.driver);
-  driver.status = "assigned"
+  driver.status = "assigned";
 };
 export const notifyUser = (message) => {
-  console.log("Notifying user: ", message);
-  const userId =  message.user.toString();
-  console.log("users: ", users,userId);
+  // console.log("Notifying user: ", message);
+  const userId = message.user.toString();
+  // console.log("users: ", users,userId);
   const userSocketId = users.find((user) => user.userId === userId)?.socketId;
-  console.log(userSocketId);
+  // console.log(userSocketId);
   if (userSocketId) {
-    console.log("Sending notification to user", userSocketId);
+    // console.log("Sending notification to user", userSocketId);
     io.to(userSocketId).emit("ride-booked", message);
   }
 };
@@ -174,8 +179,8 @@ app.get("/active-riders", async (req, res) => {
     const activeRiderDetails = await Promise.all(
       drivers.map((driver) => User.findById(driver.driverId))
     );
-    console.log(drivers);
-    console.log(activeRiderDetails)
+    // console.log(drivers);
+    // console.log(activeRiderDetails)
     res.json(activeRiderDetails);
   } catch (error) {
     console.error("Error fetching active riders:", error);
@@ -186,42 +191,70 @@ app.get("/active-riders", async (req, res) => {
 app.use("/api/auth", authRoutes);
 app.post("/api/get-address", geo);
 app.post("/api/get-co-ord", getCoordinates);
-app.use("/driver",driverRoutes);
-app.use("/user",userRoutes);
+app.use("/driver", driverRoutes);
+app.use("/user", userRoutes);
 app.use("/bookings", bookingRoutes);
 app.use("/locationUpdate", locationRoute);
-app.post('/getCoordsFromAdd', async (req, res) => {
+// Backend: /api/register-device
+app.post("/api/register-device", async (req, res) => {
+  try {
+    const { userId, playerId, pushToken, deviceType } = req.body;
+
+    // Update or create device record in MongoDB
+    await db.collection("devices").updateOne(
+      { userId: userId },
+      {
+        $set: {
+          playerId: playerId,
+          pushToken: pushToken,
+          deviceType: deviceType,
+          lastUpdated: new Date(),
+          isActive: true,
+        },
+      },
+      { upsert: true }
+    );
+
+    res.json({ success: true, message: "Device registered successfully" });
+  } catch (error) {
+    console.error("Device registration error:", error);
+    res.status(500).json({ error: "Failed to register device" });
+  }
+});
+
+app.post("/getCoordsFromAdd", async (req, res) => {
   const { address } = req.body;
 
   if (!address) {
-    return res.status(400).json({ error: 'Address is required' });
+    return res.status(400).json({ error: "Address is required" });
   }
 
   try {
-    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
-      params: {
-        q: address,
-        format: 'json',
-        limit: 1,
-      },
-      headers: {
-        'User-Agent': 'YourAppName/1.0',
-      },
-    });
+    const response = await axios.get(
+      "https://nominatim.openstreetmap.org/search",
+      {
+        params: {
+          q: address,
+          format: "json",
+          limit: 1,
+        },
+        headers: {
+          "User-Agent": "YourAppName/1.0",
+        },
+      }
+    );
 
     if (response.data.length === 0) {
-      return res.status(404).json({ error: 'Address not found' });
+      return res.status(404).json({ error: "Address not found" });
     }
 
     const { lat, lon } = response.data[0];
     res.json({ latitude: lat, longitude: lon });
   } catch (error) {
     console.error(error.message);
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ error: "Something went wrong" });
   }
 });
-
-
 
 server.listen(PORT, () => {
   console.log(`Server is running at the port ${PORT}`);

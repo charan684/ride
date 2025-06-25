@@ -1,52 +1,7 @@
 import { notifyAdmin, notifyUser, notifyDriver } from "../index.js";
 import bookingModel from "../models/ride.model.js";
 import User from "../models/user.model.js";
-// const createBooking = async (req, res) => {
-//   console.log("Booking raid");
-//   const { source, destination, address, userAddress } = req.body;
-//   // console.log(source,destination,userAddress);
-//   const decoded = req.user;
-//   // console.log(decoded);
-//   const user = await User.findById(decoded.userId);
-//   if (!user) return res.status(404).json({ error: "User not found" });
-//   console.log("booking user", user);
-//   const newBooking = await bookingModel.create({
-//     user: decoded.userId,
-//     pickupLocation: {
-//       address: userAddress,
-//       coordinates: { lat: source.lat, lng: source.lng },
-//     },
-//     destination: {
-//       address,
-//       coordinates: { lat: destination.lat, lng: destination.lng },
-//     },
-//     status: "requested",
-//     driver: null,
-//     userName: user.username,
-//     userPhone: user.phone,
-//   });
-//   notifyAdmin({
-//     _id: newBooking._id,
-//     user: decoded.userId,
-//     pickupLocation: {
-//       address: userAddress,
-//       coordinates: { lat: source.lat, lng: source.lng },
-//     },
-//     destination: {
-//       address,
-//       coordinates: { lat: destination.lat, lng: destination.lng },
-//     },
-//     status: "requested",
-//     driver: null,
-//     userName: user.username,
-//     userPhone: user.phone,
-//   });
-//   return res.status(200).json({
-//     message:
-//       "Your booking has been received. We will notify you when the ride is confirmed. Thank you!",
-//     details: { bookingId: newBooking._id },
-//   });
-// };
+
 const createBooking = async (req, res) => {
   console.log("Booking raid");
   const locations = req.body;
@@ -65,16 +20,7 @@ const createBooking = async (req, res) => {
     userName: user.username,
     userPhone: user.phone,
   });
-  console.log(newBooking)
-  notifyAdmin({
-    _id: newBooking._id,
-    user: decoded.userId,
-    locations,
-    status: "requested",
-    driver: null,
-    userName: user.username,
-    userPhone: user.phone,
-  });
+  console.log(newBooking);
   return res.status(200).json({
     message:
       "Your booking has been received. We will notify you when the ride is confirmed. Thank you!",
@@ -127,16 +73,19 @@ const getBookingDetails = async (req, res) => {
 const updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
-    console.log(status, id);
+    const { status, locationIndex, timestamp } = req.body;
+    console.log(status, id, locationIndex, timestamp);
     if (!id) return res.status(400).json({ error: "Invalid booking ID" });
     const rideDetails = await bookingModel.findById(id);
     if (!rideDetails)
       return res.status(404).json({ error: "Ride details not found" });
     console.log(rideDetails);
-    rideDetails.status = status;
+    rideDetails.locations[locationIndex].visited = status;
+    rideDetails.locations[locationIndex].timestamp = timestamp;
+
+    rideDetails.markModified(`locations.${locationIndex}`);
     await rideDetails.save();
-    console.log("updated successfully");
+    console.log("updated successfully", rideDetails);
     return res.status(200).json({ message: "Status updated successfully" });
   } catch (error) {
     return res.status(500).json({ message: "Status updating failed" });
