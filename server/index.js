@@ -18,12 +18,23 @@ import axios from "axios";
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+  transports: ['websocket', 'polling'], // VERY IMPORTANT
+});
 let adminSocketId = null;
 let users = [];
 let drivers = [];
 io.on("connection", (socket) => {
   console.log("A user connected", socket.id);
+  socket.on("join-room", (roomId) => {
+  socket.join(roomId);
+  console.log(`Socket ${socket.id} joined room: ${roomId}`);
+});
+
   socket.on("admin-login", () => {
     adminSocketId = socket.id;
     console.log("Admin logged in", adminSocketId);
@@ -46,11 +57,12 @@ io.on("connection", (socket) => {
   });
 
   socket.on("rider-login", async (token) => {
-    // console.log(token);
+    console.log(token);
 
     try {
-      // console.log(token);
+      console.log(token);
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log("decoded:",decoded);
       const driverId = decoded.userId;
       const socketId = socket.id;
       console.log("Driver logged in", driverId, socketId);
@@ -79,36 +91,47 @@ io.on("connection", (socket) => {
       io.to(userIndex.socketId).emit("ride-complete", { rideId, userId });
     }
   });
-  socket.on("driver-location", async (data) => {
-    console.log("Got location update",data);
-    const { location, userId, riderId, rideId } = data;
+ socket.on("driver-location", async (data) => {
+  console.log("Got location update", data);
+  const { location, userId, riderId, rideId } = data;
 
-    if (userId) {
-      const userIndex = users.find((u) => u.userId === userId._id);
-      if (!userIndex) {
-        console.log("User is not tracking");
-        return;
-      }
-      io.to(userIndex.socketId).emit("driver-location", {
-        location,
-        riderId,
-        rideId,
-      });
+  const userIndex = users.find((u) => u.userId === userId);  // FIXED
+  if (!userIndex) {
+    console.log("User is not tracking");
+    return;
+  }
+
+  io.to(userIndex.socketId).emit("driver-location", {
+  location,
+  riderId,
+  rideId,
+});
+
+
+  const driver = await User.findOne({ _id: userId });
+  if (driver) {
+    driver.location = location;
+    await driver.save();
+  }
+});
+
+  socket.on('locationUpdate', (data) => {
+    
+    const { latitude, longitude, timestamp } = data.location;
+    if (latitude && longitude) {
+      const lastKnownLocation = { latitude, longitude, timestamp };
+      console.log('[Socket] Received location:', lastKnownLocation);
+      io.emit('riderLocation', lastKnownLocation);
+    } else {
+      console.warn('[Socket] Incomplete data:', data);
     }
-    const driver = await User.findOne({ _id: userId });
-    if (driver) {
-      // console.log("Driver location: ", location);
-      driver.location = location;
-      await driver.save();
-    }
-    // console.log("Driver location: ", location);
   });
   socket.on("disconnect", () => {
     if (adminSocketId === socket.id) {
       adminSocketId = null;
       console.log("Admin logged out");
     }
-
+console.log('[Socket] Client disconnected:', socket.id);
     const userIndex = users.findIndex((user) => user.socketId === socket.id);
     if (userIndex !== -1) {
       users.splice(userIndex, 1);

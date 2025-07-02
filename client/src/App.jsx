@@ -28,6 +28,7 @@ const App = () => {
         <Route path="/my-rides" element={<ProtectedRoute><UserRides /></ProtectedRoute>} />
         <Route path="/success" element={<RideBookingSuccess />} />
         <Route path="/track-ride/:id" element={<ProtectedRoute><TrackRide /></ProtectedRoute>} />
+        
       </Routes>
     </>
   );

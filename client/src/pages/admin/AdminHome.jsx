@@ -416,8 +416,8 @@ const handleNewDriver = (driver) => {
                                       </span>
                                     </div>
                                     <span className="truncate max-w-[140px] text-gray-800">
-                                      {ride.locations[0].lat},{" "}
-                                      {ride.locations[0].lng}
+                                      {ride?.locations[0]?.lat},{" "}
+                                      {ride?.locations[0]?.lng}
                                     </span>
                                   </div>
 
@@ -434,9 +434,9 @@ const handleNewDriver = (driver) => {
                                     </div>
                                     <span className="truncate max-w-[140px] text-gray-800">
                                       {
-                                        ride.locations[
-                                          ride.locations.length - 1
-                                        ].lat
+                                        ride?.locations[
+                                          ride?.locations.length - 1
+                                        ]?.lat
                                       }
                                       ,{" "}
                                       {

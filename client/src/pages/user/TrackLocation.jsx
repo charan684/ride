@@ -85,7 +85,7 @@ const TrackLocationMap = () => {
   useEffect(() => {
     getRideDetails();
     const socket = socketInstance.getSocket("user");
-    socket?.on("driver-location", (data) => {
+    socket?.on("riderLocation", (data) => {
       const { location,riderId,rideId,userId } = data;
       console.log("Received location update:",location);
       setDriverLocation(location)
