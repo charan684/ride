@@ -91,29 +91,34 @@ io.on("connection", (socket) => {
       io.to(userIndex.socketId).emit("ride-complete", { rideId, userId });
     }
   });
+  socket.on("join-admin-map", () => {
+  socket.join("admin-map");
+  console.log("Admin joined admin-map room");
+});
+
  socket.on("driver-location", async (data) => {
   console.log("Got location update", data);
   const { location, userId, riderId, rideId } = data;
 
-  const userIndex = users.find((u) => u.userId === userId);  // FIXED
-  if (!userIndex) {
-    console.log("User is not tracking");
-    return;
+  // Emit to user if user is connected
+  const userIndex = users.find((u) => u.userId === userId);
+  if (userIndex) {
+    io.to(userIndex.socketId).emit("driver-location", {
+      location,
+      riderId,
+      rideId,
+    });
   }
 
-  io.to(userIndex.socketId).emit("driver-location", {
-  location,
-  riderId,
-  rideId,
+  // Emit to admin map
+  io.to("admin-map").emit("driver-location", {
+    location,
+    riderId,
+    driverId: userId,
+    username: `Driver-${riderId?.slice(0, 5) || "N/A"}`, // Optional label
+  });
 });
 
-
-  const driver = await User.findOne({ _id: userId });
-  if (driver) {
-    driver.location = location;
-    await driver.save();
-  }
-});
 
   socket.on('locationUpdate', (data) => {
     

@@ -13,6 +13,7 @@ import UserProfilePage from './pages/Profile.jsx';
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import TrackLocationMap from "./pages/user/TrackLocation.jsx";
 import { Toaster } from'react-hot-toast';
+import AdminMapWithAllRiders from "./pages/admin/AdminMap.jsx";
 const App = () => {
   return (
     <>
@@ -24,6 +25,8 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
         <Route path="/admin/" element={<ProtectedRoute forUser="admin"><AdminHome /></ProtectedRoute>} />
+        <Route path="/admin-map/" element={<ProtectedRoute forUser="admin"><AdminMapWithAllRiders /></ProtectedRoute>} />
+
         <Route path="/booking/:id" element={<ProtectedRoute><RideBookingLoading /></ProtectedRoute>} />
         <Route path="/my-rides" element={<ProtectedRoute><UserRides /></ProtectedRoute>} />
         <Route path="/success" element={<RideBookingSuccess />} />
