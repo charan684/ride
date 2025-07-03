@@ -108,7 +108,7 @@ export const getMe = async (req, res) => {
 export const driverSignup = async (req, res) => {
   // console.log("Here");
   try {
-    const { email, password, name, phone, location } = req.body;
+    const { email, password, name, phone } = req.body;
     // console.log(email,password)
     const userExist = await User.findOne({ email });
     if (userExist) return res.status(400).json({ message: "User exists" });
@@ -119,7 +119,6 @@ export const driverSignup = async (req, res) => {
       password: hashed,
       username: name,
       phone,
-      location,
       role: "rider",
     });
     res.status(201).json({ message: "User created", user });
