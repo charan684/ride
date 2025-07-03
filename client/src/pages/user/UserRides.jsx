@@ -66,6 +66,7 @@ const UserRides = ({ userId }) => {
         const res = await axios.get(`${apiUrl}/user/my-rides`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log(res.data)
         setRides(res.data);
       } catch (err) {
         setRides([]);
@@ -139,7 +140,8 @@ const UserRides = ({ userId }) => {
                 <div className="mb-2">
                   <span className="font-semibold text-gray-900">Pickup:</span>
                   <span className="ml-2 text-gray-700">
-                    {ride.pickupLocation?.address || "N/A"}
+                    {/* {ride.pickupLocation?.address || "N/A"} */}
+                    {ride?.locations[0]?.lat},{ride?.locations[0]?.lng}
                   </span>
                 </div>
                 <div className="mb-2">
@@ -147,7 +149,9 @@ const UserRides = ({ userId }) => {
                     Destination:
                   </span>
                   <span className="ml-2 text-gray-700">
-                    {ride.destination?.address || "N/A"}
+                    {/* {ride.destination?.address || "N/A"}
+                     */}
+                     {ride?.locations[0]?.lat},{ride?.locations[0]?.lng}
                   </span>
                 </div>
                 <div className="mb-2">
