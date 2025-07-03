@@ -107,6 +107,7 @@ io.on("connection", (socket) => {
       location,
       riderId,
       rideId,
+      userId,
     });
   }
 
@@ -195,11 +196,24 @@ export const notifyUser = (message) => {
     io.to(userSocketId).emit("ride-booked", message);
   }
 };
+const allowedOrigins = [
+  "https://ride-burc.onrender.com",
+  "http://localhost:5173"
+];
+
 app.use(cors({
-  origin: "https://ride-burc.onrender.com",
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
