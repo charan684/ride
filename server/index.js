@@ -101,22 +101,20 @@ socket.on("driver-location", async (data) => {
   const { location, userId, riderId, rideId } = data;
 
   try {
-    // Check presence
     if (!location || location.latitude == null || location.longitude == null) {
       console.warn("Missing location data:", location);
       return;
     }
 
-    // Convert to strings and validate
     const lat = String(location.latitude);
     const lng = String(location.longitude);
 
-    if (isNaN(Number(latitude)) || isNaN(Number(longitude))) {
-      console.warn("Invalid coordinates:", { latitude, longitude });
+    if (isNaN(Number(lat)) || isNaN(Number(lng))) {
+      console.warn("Invalid coordinates:", { lat, lng });
       return;
     }
 
-    // ✅ Update driver document (riderId is driver’s Mongo _id)
+    // Update driver document (riderId is driver's _id)
     const result = await User.updateOne(
       { _id: riderId },
       {
@@ -135,7 +133,7 @@ socket.on("driver-location", async (data) => {
       console.log(`Location updated for driver ${riderId}:`, { lat, lng });
     }
 
-    // Send to user if online
+    // Emit to user
     const userIndex = users.find((u) => u.userId === userId);
     if (userIndex) {
       io.to(userIndex.socketId).emit("driver-location", {
@@ -146,7 +144,7 @@ socket.on("driver-location", async (data) => {
       });
     }
 
-    // Send to admin map
+    // Emit to admin map
     io.to("admin-map").emit("driver-location", {
       location: { lat, lng },
       riderId,
@@ -157,6 +155,7 @@ socket.on("driver-location", async (data) => {
     console.error("Failed to update driver location:", err);
   }
 });
+
 
   socket.on('locationUpdate', (data) => {
     
