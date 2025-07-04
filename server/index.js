@@ -43,7 +43,7 @@ io.on("connection", (socket) => {
     console.log("Got a user login");
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const userId = decoded.userId;
+      const userId = decoded.userId.toString();
       const socketId = socket.id;
       users = users.filter((u) => u.userId !== userId);
       users.push({ userId, socketId });
@@ -72,7 +72,7 @@ io.on("connection", (socket) => {
       console.log(token);
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       console.log("decoded:",decoded);
-      const driverId = decoded.userId;
+      const driverId = decoded.userId.toString();
       const socketId = socket.id;
       console.log("Driver logged in", driverId, socketId);
 
