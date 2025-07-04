@@ -10,4 +10,8 @@ router.delete("/cancel/:id", bookingController.cancelBooking);
 router.post("/assignDriver/:id", bookingController.assignDriver);
 router.get("/ride-details/:id", bookingController.getBookingDetails);
 router.put("/status/:id",bookingController.updateStatus)
+router.post("/ride-complete/:id",bookingController.rideComplete);
+router.post("/ride-request",bookingController.bookingRequests);
+router.get("/requested", bookingController.getRequestedBookings);
+
 export default router;

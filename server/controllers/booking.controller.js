@@ -44,22 +44,36 @@ export const cancelBooking = async (req, res) => {
 };
 
 export const assignDriver = async (req, res) => {
-  const { id } = req.params;
-  console.log(id);
-  if (!id) return res.status(400).json({ error: "Invalid booking ID" });
-  const { driverId } = req.body;
-  const rideDetails = await bookingModel.findById(id);
-  if (!rideDetails)
-    return res.status(404).json({ error: "Ride details not found" });
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ error: "Invalid booking ID" });
 
-  rideDetails.driver = driverId;
-  rideDetails.status = "assigned";
-  await rideDetails.save();
-  console.log(rideDetails);
-  await notifyDriver(rideDetails);
-  await notifyUser(rideDetails);
-  return res.status(200).json({ message: "Driver assigned successfully" });
+    const { driverId } = req.body;
+    if (!driverId) return res.status(400).json({ error: "Driver ID is required" });
+
+    const rideDetails = await bookingModel.findById(id);
+    if (!rideDetails) return res.status(404).json({ error: "Ride details not found" });
+
+    const riderDetails = await User.findById(driverId);
+    if (!riderDetails) return res.status(404).json({ error: "Driver not found" });
+
+    riderDetails.status = "assigned";
+    await riderDetails.save();
+
+    rideDetails.driver = driverId;
+    rideDetails.status = "assigned";
+    await rideDetails.save();
+
+    await notifyDriver(rideDetails);
+    await notifyUser(rideDetails);
+
+    return res.status(200).json({ message: "Driver assigned successfully", driver: riderDetails });
+  } catch (err) {
+    console.error("Error in assignDriver:", err);
+    return res.status(500).json({ error: "Server error while assigning driver" });
+  }
 };
+
 
 const getBookingDetails = async (req, res) => {
   const { id } = req.params;
@@ -91,6 +105,41 @@ const updateStatus = async (req, res) => {
     return res.status(500).json({ message: "Status updating failed" });
   }
 };
+const rideComplete=async(req,res)=>{
+  const {id}=req.params;
+  if (!id) return res.status(400).json({ error: "Invalid booking ID" });
+  const rideDetails=await BookingModel.findById(id);
+  rideDetails.status="completed";
+  const riderDetails=await User.findById(rideDetails.driver);
+  riderDetails.status="free";
+  await rideDetails.save();
+  await riderDetails.save();
+  res.status(200).json({
+    message:"Ride completed successfully"
+  });
+
+};
+const bookingRequests= async (req, res) => {
+  const booking = await Booking.create({
+    user: req.userId,
+    locations: req.body.locations,
+    fare: req.body.fare,
+    status: "requested"
+  });
+  notifyAdmin(booking);
+  res.status(201).json(booking);
+};
+
+export const getRequestedBookings = async (req, res) => {
+  try {
+    const requestedBookings = await bookingModel.find({ status: "requested" });
+    return res.status(200).json(requestedBookings);
+  } catch (error) {
+    console.error("Failed to get requested bookings:", error);
+    return res.status(500).json({ error: "Failed to fetch requested bookings" });
+  }
+};
+
 export default {
   createBooking,
   getAllBookings,
@@ -98,4 +147,7 @@ export default {
   assignDriver,
   updateStatus,
   getBookingDetails,
+  rideComplete,
+  bookingRequests,
+  getRequestedBookings
 };
