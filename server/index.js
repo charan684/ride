@@ -100,6 +100,14 @@ io.on("connection", (socket) => {
   console.log("Got location update", data);
   const { location, userId, riderId, rideId } = data;
 
+  try {
+    await User.updateOne(
+      { _id: riderId },              // Use userId (which is driverId)
+      { $set: { location } }        // Set location field
+    );
+  } catch (err) {
+    console.error("Failed to update driver location:", err);
+  }
   // Emit to user if user is connected
   const userIndex = users.find((u) => u.userId === userId);
   if (userIndex) {

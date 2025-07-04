@@ -26,7 +26,8 @@ const AssignDriver = ({ booking, onAssigned }) => {
   };
   const assignNearest = async () => {
       setAssigning(true);
-      const pickup = booking.locations[0];  // Use first location as pickup [3]
+      const pickup = booking.locations[0]; 
+      console.log("boking",booking); // Use first location as pickup [3]
       try {
         // Fetch all drivers marked "free" from backend  
         const response = await axios.get(`${apiUrl}/active-riders`);  
@@ -38,12 +39,13 @@ const AssignDriver = ({ booking, onAssigned }) => {
         }
 
         // Compute distance for each driver and sort ascending  
+        console.log("free:",freeDrivers)
         const nearest = freeDrivers
           .map(d => ({
             ...d,
             distance: calculateDistance(
               pickup.lat, pickup.lng,
-              d.location.lat, d.location.lng
+              d?.location?.lat, d?.location?.lng
             )
           }))
           .sort((a, b) => a.distance - b.distance)[0];
