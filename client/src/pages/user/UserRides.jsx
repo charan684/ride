@@ -26,26 +26,24 @@ const UserRides = ({ userId }) => {
   const handleTrackLocation = async (ride) => {
     try {
       const response = await getRideDetails(ride._id);
-      console.log("userrides response:",response)
+      console.log(response)
       const driverLoc = response.riderDetails.location;
       setDriverLocation(driverLoc);
-      console.log("User ride:",ride);
-      const customerLat = ride.locations[0]?.lat || 17.263;
-      const customerLng = ride.locations[0]?.lng || 78.233;
+      const customerLat = ride.destination?.coordinates?.lat || 17.263;
+      const customerLng = ride.destination?.coordinates?.lng || 78.233;
       // const url = `/Navigation.html?driverLat=${driverLoc.lat}&driverLng=${driverLoc.lng}&customerLat=${customerLat}&customerLng=${customerLng}`;
       // window.open(url, "_blank");
       navigate(`/track-ride/${ride._id}`, {
         state: {
           userLocation: { lat: customerLat, lng: customerLng },
-          driverLocation: { lat: driverLoc?.lat, lng: driverLoc?.lng },
+          driverLocation: { lat: driverLoc.lat, lng: driverLoc.lng },
         },
       });
     } catch (err) {
-      console.log(err.message);
+      console.log(err);
       // alert("Unable to fetch driver location.");
     }
   };
-
   // Fetch ride details
 
   const getRideDetails = async (id) => {

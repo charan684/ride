@@ -96,64 +96,61 @@ io.on("connection", (socket) => {
   console.log("Admin joined admin-map room");
 });
 
- socket.on("driver-location", async (data) => {
+socket.on("driver-location", async (data) => {
   console.log("Got location update", data);
   const { location, userId, riderId, rideId } = data;
 
   try {
-    // Fallback if location is missing or malformed
-    if (
-      !location ||
-      typeof location.lat !== "number" ||
-      typeof location.lng !== "number"
-    ) {
-      console.warn("Invalid location data from driver:", data);
+    // Ensure lat/lng exist
+    if (!location || location.lat == null || location.lng == null) {
+      console.warn("Missing location data from driver:", data);
       return;
     }
 
-    // Ensure location field is created or updated
-    try {
-    // Convert to numbers and validate
-    const lat = Number(location?.lat);
-    const lng = Number(location?.lng);
+    // Convert to string and validate as numeric values
+    const lat = String(location.lat);
+    const lng = String(location.lng);
 
-    if (isNaN(lat) || isNaN(lng)) {
-      console.warn("Invalid lat/lng received from driver:", location);
+    if (isNaN(Number(lat)) || isNaN(Number(lng))) {
+      console.warn("Invalid lat/lng values from driver:", location);
       return;
     }
 
-    // Update location (create field if missing)
+    // Store lat/lng as strings in DB (for consistency)
     await User.updateOne(
-      { _id: riderId },
+      { _id: userId },  // ✅ This is the driver's Mongo ID
       {
         $set: {
-          location: { lat, lng },
+          location: {
+            lat,
+            lng,
+          },
         },
       }
     );
-  } catch (err) {
-    console.error("Failed to update driver location:", err);
-  }
-  // Emit to user if user is connected
-  const userIndex = users.find((u) => u.userId === userId);
-  if (userIndex) {
-    io.to(userIndex.socketId).emit("driver-location", {
-      location,
+
+    // Emit to user (if connected)
+    const userIndex = users.find((u) => u.userId === userId);
+    if (userIndex) {
+      io.to(userIndex.socketId).emit("driver-location", {
+        location: { lat, lng },
+        riderId,
+        rideId,
+        userId,
+      });
+    }
+
+    // Emit to admin map
+    io.to("admin-map").emit("driver-location", {
+      location: { lat, lng },
       riderId,
-      rideId,
-      userId,
+      driverId: userId,
+      username: `Driver-${riderId?.slice(0, 5) || "N/A"}`, // Optional label
     });
+  } catch (err) {
+    console.error("Error in driver-location handler:", err);
   }
-
-  // Emit to admin map
-  io.to("admin-map").emit("driver-location", {
-    location,
-    riderId,
-    driverId: userId,
-    username: `Driver-${riderId?.slice(0, 5) || "N/A"}`, // Optional label
-  });
 });
-
 
   socket.on('locationUpdate', (data) => {
     
