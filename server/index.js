@@ -101,9 +101,35 @@ io.on("connection", (socket) => {
   const { location, userId, riderId, rideId } = data;
 
   try {
+    // Fallback if location is missing or malformed
+    if (
+      !location ||
+      typeof location.lat !== "number" ||
+      typeof location.lng !== "number"
+    ) {
+      console.warn("Invalid location data from driver:", data);
+      return;
+    }
+
+    // Ensure location field is created or updated
+    try {
+    // Convert to numbers and validate
+    const lat = Number(location?.lat);
+    const lng = Number(location?.lng);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      console.warn("Invalid lat/lng received from driver:", location);
+      return;
+    }
+
+    // Update location (create field if missing)
     await User.updateOne(
-      { _id: riderId },              // Use userId (which is driverId)
-      { $set: { location } }        // Set location field
+      { _id: riderId },
+      {
+        $set: {
+          location: { lat, lng },
+        },
+      }
     );
   } catch (err) {
     console.error("Failed to update driver location:", err);
