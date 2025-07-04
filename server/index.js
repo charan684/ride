@@ -126,19 +126,24 @@ socket.on("driver-location", async (data) => {
     }
 
     // Update driver document (riderId is driver's _id)
-    if(riderId){
-    const result = await User.updateOne(
-      { _id: riderId },
-      {
-        $set: {
-          location: {
-            lat,
-            lng,
-          },
+    const isValidObjectId = (id) => /^[a-fA-F0-9]{24}$/.test(id);
+
+if (isValidObjectId(riderId)) {
+  const result = await User.updateOne(
+    { _id: riderId },
+    {
+      $set: {
+        location: {
+          lat,
+          lng,
         },
-      }
-    );
-  }
+      },
+    }
+  );
+} else {
+  console.warn("Invalid riderId:", riderId);
+}
+
 
     if (result.modifiedCount === 0) {
       console.warn("Driver document not updated. ID:", riderId);
