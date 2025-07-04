@@ -128,6 +128,9 @@ socket.on("driver-location", async (data) => {
         },
       }
     );
+    const updatedUser = await User.findById(riderId);
+console.log("Updated user with location:", updatedUser);
+
 
     // Emit to user (if connected)
     const userIndex = users.find((u) => u.userId === userId);
