@@ -227,20 +227,33 @@ export const notifyAdmin = (message) => {
 };
 
 export const notifyDriver = async (message) => {
-  // console.log("Notifying driver: ", message);
+  console.log("Notifying driver: ", message);
   const driverId = message.driver.toString();
-  // console.log("drivers: ", drivers,driverId);
+
   const driverSocketId = drivers.find(
     (driver) => driver.driverId === driverId
   )?.socketId;
-  // console.log(driverSocketId);
+
   if (driverSocketId) {
-    // console.log("Sending notification to driver", driverSocketId);
+    // Emit ride info
     io.to(driverSocketId).emit("new-ride", message);
+
+    // ✅ Emit start-tracking with correct values
+    io.to(driverSocketId).emit("start-tracking", {
+      riderId: driverId,
+      rideId: message._id,
+      userId: message.user,
+    });
+
+    console.log("✅ Emitted 'start-tracking' to driver:", driverSocketId);
   }
+
+  // Update driver's status in DB
   const driver = await User.findById(message.driver);
   driver.status = "assigned";
+  await driver.save(); // ✅ You forgot to save it
 };
+
 export const notifyUser = (message) => {
   // console.log("Notifying user: ", message);
   const userId = message.user.toString();
