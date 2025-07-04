@@ -55,7 +55,16 @@ io.on("connection", (socket) => {
       socket.disconnect();
     }
   });
+  socket.on("new_ride_request", (data) => {
+  console.log("Received new ride request from user:", data);
 
+  if (adminSocketId) {
+    io.to(adminSocketId).emit("new_ride_request", data);
+    console.log("Sent ride request to admin:", adminSocketId);
+  } else {
+    console.warn("No admin connected to receive ride request.");
+  }
+});
   socket.on("rider-login", async (token) => {
     console.log(token);
 
@@ -99,7 +108,9 @@ io.on("connection", (socket) => {
 socket.on("driver-location", async (data) => {
   console.log("Got location update", data);
   const { location, userId, riderId, rideId } = data;
-
+  const socketId = socket.id;
+  drivers = drivers.filter((d) => d.driverId !== riderId);
+  drivers.push({ driverId: riderId, socketId, status: "free" });
   try {
     if (!location || location.latitude == null || location.longitude == null) {
       console.warn("Missing location data:", location);
@@ -115,6 +126,7 @@ socket.on("driver-location", async (data) => {
     }
 
     // Update driver document (riderId is driver's _id)
+    if(riderId){
     const result = await User.updateOne(
       { _id: riderId },
       {
@@ -126,6 +138,7 @@ socket.on("driver-location", async (data) => {
         },
       }
     );
+  }
 
     if (result.modifiedCount === 0) {
       console.warn("Driver document not updated. ID:", riderId);
@@ -151,6 +164,7 @@ socket.on("driver-location", async (data) => {
       driverId: riderId,
       username: `Driver-${riderId?.slice(0, 5) || "N/A"}`,
     });
+
   } catch (err) {
     console.error("Failed to update driver location:", err);
   }
