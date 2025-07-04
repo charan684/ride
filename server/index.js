@@ -118,7 +118,7 @@ socket.on("driver-location", async (data) => {
 
     // Store lat/lng as strings in DB (for consistency)
     await User.updateOne(
-      { _id: userId },  // ✅ This is the driver's Mongo ID
+      { _id: riderId },  // ✅ This is the driver's Mongo ID
       {
         $set: {
           location: {
