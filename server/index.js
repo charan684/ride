@@ -239,10 +239,11 @@ export const notifyDriver = async (message) => {
     io.to(driverSocketId).emit("new-ride", message);
 
     // ✅ Emit start-tracking with correct values
+    console.log("message herer:",message);
     io.to(driverSocketId).emit("start-tracking", {
       riderId: driverId,
-      rideId: message._id,
-      userId: message.user,
+      rideId: message._id.toString(),
+      userId: message.user.toString(),
     });
 
     console.log("✅ Emitted 'start-tracking' to driver:", driverSocketId);
