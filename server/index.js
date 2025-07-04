@@ -101,24 +101,24 @@ socket.on("driver-location", async (data) => {
   const { location, userId, riderId, rideId } = data;
 
   try {
-    // Ensure lat/lng exist
-    if (!location || location.lat == null || location.lng == null) {
-      console.warn("Missing location data from driver:", data);
+    // Check presence
+    if (!location || location.latitude == null || location.longitude == null) {
+      console.warn("Missing location data:", location);
       return;
     }
 
-    // Convert to string and validate as numeric values
-    const lat = String(location.lat);
-    const lng = String(location.lng);
+    // Convert to strings and validate
+    const lat = String(location.latitude);
+    const lng = String(location.longitude);
 
-    if (isNaN(Number(lat)) || isNaN(Number(lng))) {
-      console.warn("Invalid lat/lng values from driver:", location);
+    if (isNaN(Number(latitude)) || isNaN(Number(longitude))) {
+      console.warn("Invalid coordinates:", { latitude, longitude });
       return;
     }
 
-    // Store lat/lng as strings in DB (for consistency)
-    await User.updateOne(
-      { _id: riderId },  // ✅ This is the driver's Mongo ID
+    // ✅ Update driver document (riderId is driver’s Mongo _id)
+    const result = await User.updateOne(
+      { _id: riderId },
       {
         $set: {
           location: {
@@ -128,11 +128,14 @@ socket.on("driver-location", async (data) => {
         },
       }
     );
-    const updatedUser = await User.findById(riderId);
-console.log("Updated user with location:", updatedUser);
 
+    if (result.modifiedCount === 0) {
+      console.warn("Driver document not updated. ID:", riderId);
+    } else {
+      console.log(`Location updated for driver ${riderId}:`, { lat, lng });
+    }
 
-    // Emit to user (if connected)
+    // Send to user if online
     const userIndex = users.find((u) => u.userId === userId);
     if (userIndex) {
       io.to(userIndex.socketId).emit("driver-location", {
@@ -143,15 +146,15 @@ console.log("Updated user with location:", updatedUser);
       });
     }
 
-    // Emit to admin map
+    // Send to admin map
     io.to("admin-map").emit("driver-location", {
       location: { lat, lng },
       riderId,
-      driverId: userId,
-      username: `Driver-${riderId?.slice(0, 5) || "N/A"}`, // Optional label
+      driverId: riderId,
+      username: `Driver-${riderId?.slice(0, 5) || "N/A"}`,
     });
   } catch (err) {
-    console.error("Error in driver-location handler:", err);
+    console.error("Failed to update driver location:", err);
   }
 });
 
