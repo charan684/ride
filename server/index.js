@@ -140,16 +140,17 @@ if (isValidObjectId(riderId)) {
       },
     }
   );
+  if (result.modifiedCount === 0) {
+      console.warn("Driver document not updated. ID:", riderId);
+    } else {
+      console.log(`Location updated for driver ${riderId}:`, { lat, lng });
+    }
 } else {
   console.warn("Invalid riderId:", riderId);
 }
 
 
-    if (result.modifiedCount === 0) {
-      console.warn("Driver document not updated. ID:", riderId);
-    } else {
-      console.log(`Location updated for driver ${riderId}:`, { lat, lng });
-    }
+    
 
     // Emit to user
     const userIndex = users.find((u) => u.userId === userId);
