@@ -161,20 +161,22 @@ socket.on("driver-location", async (data) => {
   }
 
   // 📡 Emit to all users tracking this driver
-  const trackingUsers = riderToUsers.get(riderId);
-  if (trackingUsers) {
-    for (const userId of trackingUsers) {
-      const userSocket = users.find((u) => u.userId === userId);
-      if (userSocket) {
-        io.to(userSocket.socketId).emit("live-driver-location", {
-          location: { lat, lng },
-          riderId,
-          rideId,
-          userId,
-        });
-      }
+  // 📡 Emit to all users tracking this driver
+const trackingUsers = userSubscriptions[riderId]; // ✅ Fixed line
+if (trackingUsers) {
+  for (const userId of trackingUsers) {
+    const userSocket = users.find((u) => u.userId === userId);
+    if (userSocket) {
+      io.to(userSocket.socketId).emit("live-driver-location", {
+        location: { lat, lng },
+        riderId,
+        rideId,
+        userId,
+      });
     }
   }
+}
+
 
   // Also emit to admin map
   io.to("admin-map").emit("driver-location", {
