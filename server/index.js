@@ -44,6 +44,7 @@ io.on("connection", (socket) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const userId = decoded.userId.toString();
+      socket.join(userId); 
       const socketId = socket.id;
       users = users.filter((u) => u.userId !== userId);
       users.push({ userId, socketId });
@@ -208,7 +209,7 @@ if (isValidObjectId(riderId)) {
   }
 });
 
-socket.on('start-ride',)
+// socket.on('start-ride')
 
   socket.on('locationUpdate', (data) => {
     
