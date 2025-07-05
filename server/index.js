@@ -110,7 +110,11 @@ socket.on("driver-location", async (data) => {
   const { location, userId, riderId, rideId } = data;
   const socketId = socket.id;
   drivers = drivers.filter((d) => d.driverId !== riderId);
-  drivers.push({ driverId: riderId, socketId, status: "free" });
+  drivers.push({
+  driverId:riderId,
+  socketId,
+  location: { lat:location.latitude, lng:location.longitude },
+});
   try {
     if (!location || location.latitude == null || location.longitude == null) {
       console.warn("Missing location data:", location);
@@ -225,35 +229,57 @@ export const notifyAdmin = (message) => {
     io.to(adminSocketId).emit("new-ride", message);
   }
 };
-
 export const notifyDriver = async (message) => {
   console.log("Notifying driver: ", message);
   const driverId = message.driver.toString();
+  const userId = message.user.toString();
+  const rideId = message._id.toString();
 
-  const driverSocketId = drivers.find(
-    (driver) => driver.driverId === driverId
-  )?.socketId;
+  // Find driver socket and location from in-memory store
+  const driverData = drivers.find(driver => driver.driverId === driverId);
+  const driverSocketId = driverData?.socketId;
+  const latestLocation = driverData?.location; // ← already set in "driver-location" event
+
+  // Find user socket
+  const userSocketId = users.find(user => user.userId === userId)?.socketId;
 
   if (driverSocketId) {
-    // Emit ride info
+    // Send ride details to driver
     io.to(driverSocketId).emit("new-ride", message);
 
-    // ✅ Emit start-tracking with correct values
-    console.log("message herer:",message);
+    // Send "start-tracking" signal
     io.to(driverSocketId).emit("start-tracking", {
       riderId: driverId,
-      rideId: message._id.toString(),
-      userId: message.user.toString(),
+      rideId,
+      userId,
     });
 
     console.log("✅ Emitted 'start-tracking' to driver:", driverSocketId);
   }
 
-  // Update driver's status in DB
-  const driver = await User.findById(message.driver);
+  // ✅ Emit driver's current location to user
+  if (userSocketId && latestLocation?.lat && latestLocation?.lng) {
+    io.to(userSocketId).emit("driver-location", {
+      location: {
+        lat: latestLocation.lat,
+        lng: latestLocation.lng,
+      },
+      riderId: driverId,
+      rideId,
+      userId,
+    });
+
+    console.log("✅ Sent driver's latest location to user:", userSocketId);
+  } else {
+    console.warn("⚠️ Could not emit driver's location: missing socket or location");
+  }
+
+  // Update driver's DB status
+  const driver = await User.findById(driverId);
   driver.status = "assigned";
-  await driver.save(); // ✅ You forgot to save it
+  await driver.save();
 };
+
 
 export const notifyUser = (message) => {
   // console.log("Notifying user: ", message);
