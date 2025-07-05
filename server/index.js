@@ -28,6 +28,9 @@ const io = new Server(server, {
 let adminSocketId = null;
 let users = [];
 let drivers = [];
+// userSubscriptions = { riderId: Set of userIds }
+const userSubscriptions = {}; // e.g., { 'rider123': new Set(['user123', 'user456']) }
+
 io.on("connection", (socket) => {
   console.log("A user connected", socket.id);
   socket.on("join-room", (roomId) => {
@@ -135,77 +138,70 @@ socket.on("start-tracking-driver", ({ userId, riderId, rideId }) => {
 
 
 socket.on("driver-location", async (data) => {
-  console.log("Got location update", data);
-  const { location, userId, riderId, rideId } = data;
+  const { location, riderId, rideId } = data;
   const socketId = socket.id;
+
+  if (!location || !riderId) return;
+
+  const lat = String(location.latitude);
+  const lng = String(location.longitude);
+
+  // Update in-memory driver list
   drivers = drivers.filter((d) => d.driverId !== riderId);
   drivers.push({
-  driverId:riderId,
-  socketId,
-  location: { lat:location.latitude, lng:location.longitude },
+    driverId: riderId,
+    socketId,
+    location: { lat, lng },
+  });
+
+  // Save to DB
+  const isValidObjectId = (id) => /^[a-fA-F0-9]{24}$/.test(id);
+  if (isValidObjectId(riderId)) {
+    await User.updateOne({ _id: riderId }, { $set: { location: { lat, lng } } });
+  }
+
+  // 📡 Emit to all users tracking this driver
+  const trackingUsers = riderToUsers.get(riderId);
+  if (trackingUsers) {
+    for (const userId of trackingUsers) {
+      const userSocket = users.find((u) => u.userId === userId);
+      if (userSocket) {
+        io.to(userSocket.socketId).emit("live-driver-location", {
+          location: { lat, lng },
+          riderId,
+          rideId,
+          userId,
+        });
+      }
+    }
+  }
+
+  // Also emit to admin map
+  io.to("admin-map").emit("driver-location", {
+    location: { lat, lng },
+    riderId,
+    driverId: riderId,
+    username: `Driver-${riderId?.slice(0, 5) || "N/A"}`,
+  });
 });
-  try {
-    if (!location || location.latitude == null || location.longitude == null) {
-      console.warn("Missing location data:", location);
-      return;
-    }
 
-    const lat = String(location.latitude);
-    const lng = String(location.longitude);
+socket.on("request-location", ({ userId, riderId }) => {
+  console.log("📥 User requested location stream:", { userId, riderId });
 
-    if (isNaN(Number(lat)) || isNaN(Number(lng))) {
-      console.warn("Invalid coordinates:", { lat, lng });
-      return;
-    }
+  if (!userSubscriptions[riderId]) {
+    userSubscriptions[riderId] = new Set();
+  }
+  userSubscriptions[riderId].add(userId);
 
-    // Update driver document (riderId is driver's _id)
-    const isValidObjectId = (id) => /^[a-fA-F0-9]{24}$/.test(id);
-
-if (isValidObjectId(riderId)) {
-  const result = await User.updateOne(
-    { _id: riderId },
-    {
-      $set: {
-        location: {
-          lat,
-          lng,
-        },
-      },
-    }
-  );
-  if (result.modifiedCount === 0) {
-      console.warn("Driver document not updated. ID:", riderId);
-    } else {
-      console.log(`Location updated for driver ${riderId}:`, { lat, lng });
-    }
-} else {
-  console.warn("Invalid riderId:", riderId);
-}
-
-
-    
-  
-    // Emit to user
-    const userIndex = users.find((u) => u.userId === userId);
-    if (userIndex) {
-      io.to(userIndex.socketId).emit("driver-location", {
-        location: { lat, lng },
-        riderId,
-        rideId,
-        userId,
-      });
-    }
-
-    // Emit to admin map
-    io.to("admin-map").emit("driver-location", {
-      location: { lat, lng },
+  // Optionally: Immediately send current location (if available)
+  const driver = drivers.find((d) => d.driverId === riderId);
+  const user = users.find((u) => u.userId === userId);
+  if (driver?.location && user) {
+    io.to(user.socketId).emit("driver-location", {
+      location: driver.location,
       riderId,
-      driverId: riderId,
-      username: `Driver-${riderId?.slice(0, 5) || "N/A"}`,
+      userId,
     });
-
-  } catch (err) {
-    console.error("Failed to update driver location:", err);
   }
 });
 
