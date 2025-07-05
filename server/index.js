@@ -46,6 +46,7 @@ io.on("connection", (socket) => {
       const userId = decoded.userId.toString();
       const socketId = socket.id;
       users = users.filter((u) => u.userId !== userId);
+      socket.join(userId);  
       users.push({ userId, socketId });
 
       // console.log("Users: ", users);
@@ -179,7 +180,7 @@ if (isValidObjectId(riderId)) {
     console.error("Failed to update driver location:", err);
   }
 });
-
+socket.on('start-ride',)
 
   socket.on('locationUpdate', (data) => {
     
@@ -242,7 +243,6 @@ export const notifyDriver = async (message) => {
 
   // Find user socket
   const userSocketId = users.find(user => user.userId === userId)?.socketId;
-
   if (driverSocketId) {
     // Send ride details to driver
     io.to(driverSocketId).emit("new-ride", message);
