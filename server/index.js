@@ -105,6 +105,34 @@ io.on("connection", (socket) => {
   socket.join("admin-map");
   console.log("Admin joined admin-map room");
 });
+socket.on("start-tracking-driver", ({ userId, riderId, rideId }) => {
+  console.log("🔁 User requested live tracking:", { userId, riderId, rideId });
+
+  const driverData = drivers.find(driver => driver.driverId === riderId);
+
+  if (!driverData) {
+    console.warn("🚫 Driver not found for tracking:", riderId);
+    return;
+  }
+
+  const latestLocation = driverData.location;
+  if (latestLocation) {
+    // Send the current driver location immediately
+    io.to(socket.id).emit("live-driver-location", {
+      location: latestLocation,
+      riderId,
+      rideId,
+      userId
+    });
+  }
+
+  // Optionally: Set up a stream to send updates continuously
+  // But it's better if the driver keeps sending `driver-location` and we emit it below
+
+  // Already handled in your existing "driver-location" listener:
+  // Emit to user every time location comes in
+});
+
 
 socket.on("driver-location", async (data) => {
   console.log("Got location update", data);
@@ -156,7 +184,7 @@ if (isValidObjectId(riderId)) {
 
 
     
-
+  
     // Emit to user
     const userIndex = users.find((u) => u.userId === userId);
     if (userIndex) {
@@ -180,6 +208,7 @@ if (isValidObjectId(riderId)) {
     console.error("Failed to update driver location:", err);
   }
 });
+
 socket.on('start-ride',)
 
   socket.on('locationUpdate', (data) => {
