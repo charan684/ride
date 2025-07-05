@@ -46,7 +46,6 @@ io.on("connection", (socket) => {
       const userId = decoded.userId.toString();
       const socketId = socket.id;
       users = users.filter((u) => u.userId !== userId);
-      socket.join(userId);  
       users.push({ userId, socketId });
 
       // console.log("Users: ", users);
