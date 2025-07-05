@@ -5,6 +5,7 @@ import axios from "axios";
 import MapComponent from "../components/MapComponent";  
 import MapContext from "../context/AppContext";  
 import AssignDriver from "./AssignRider";
+import socketInstance from "../services/socketService";
 
 const Home = () => {
   const { setDestLocation, apiUrl } = useContext(MapContext);  
@@ -47,19 +48,30 @@ const Home = () => {
 
   // Submit booking and trigger nearest-driver assignment
   const handleSubmit = async () => {
-    try {
-      const response = await axios.post(
-        `${apiUrl}/bookings/new`,
-        locations.map(({ lat, lng ,visited}) => ({ lat, lng ,visited})),
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-      );
-      setBooking(response.data.newBooking);  
-      setDestLocation(locations);  
-    } catch (error) {
-      console.error("Booking creation failed", error);  
-      alert("Failed to create booking");  
-    }
-  };
+  try {
+    const response = await axios.post(
+      `${apiUrl}/bookings/new`,
+      locations.map(({ lat, lng, visited }) => ({ lat, lng, visited })),
+      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+    );
+    const newBooking = response.data.newBooking;
+    setBooking(newBooking);
+    setDestLocation(locations);
+
+    const socket = socketInstance.getSocket("user"); // 👈 get actual socket
+    socket.emit("new_ride_request", {
+      booking: newBooking,
+      locations,
+    });
+
+
+    console.log("Booking created and sent to admin", newBooking);
+  } catch (error) {
+    console.error("Booking creation failed", error);
+    alert("Failed to create booking");
+  }
+};
+
 
   // Callback from AssignDriver on assignment completion
   const handleAssigned = (driver) => {
@@ -75,6 +87,7 @@ const Home = () => {
   // Fetch initial available drivers for warm-up (optional)
   useEffect(() => {
     // This can pre-fetch or subscribe via socket if needed
+    
   }, []);
 
   return (
@@ -192,9 +205,9 @@ const Home = () => {
         </div>
 
         {/* AssignDriver for automatic nearest-driver assignment */}
-        {booking && (
+        {/* {booking && (
           <AssignDriver booking={booking} onAssigned={handleAssigned} />
-        )}
+        )} */}
 
         {/* Display Assignment Result */}
         {assignmentResult !== null && (

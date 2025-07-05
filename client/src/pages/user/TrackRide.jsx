@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useContext } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -12,7 +12,6 @@ import { useLocation } from 'react-router-dom';
 import socketInstance from '../../services/socketService';
 import MapContext from '../../context/AppContext';
 
-// Custom Icons
 const bikeIcon = new L.Icon({
   iconUrl: 'https://cdn-icons-png.flaticon.com/512/3177/3177361.png',
   iconSize: [40, 40],
@@ -31,7 +30,6 @@ const pinIcon = new L.Icon({
   shadowAnchor: [13, 41]
 });
 
-// Fit map to route bounds
 function FitBounds({ bounds }) {
   const map = useMap();
   useEffect(() => {
@@ -43,56 +41,51 @@ function FitBounds({ bounds }) {
 }
 
 export default function MapWithRider() {
+  const { user } = useContext(MapContext);
   const location = useLocation();
-  const {user}=useContext(MapContext)
-  const {
-  driverLocation = { lat: 17.3121, lng: 78.1212 },
-  userLocation = { lat: 17.2121, lng: 78.3212 }
-} = location.state || {};
+  const { driverLocation, userLocation, rideId } = location.state || {};
+  const riderId = location.state?.driverLocation?.riderId || location.state?.riderId;
 
   const [driverLocationCurrent, setDriverLocationCurrent] = useState(driverLocation);
   const [routeCoords, setRouteCoords] = useState([]);
 
-  // Listen for real-time driver location updates
-useEffect(() => {
-  const socket = socketInstance.getSocket("user");
-  if (!socket) return;
+  useEffect(() => {
+    const socket = socketInstance.getSocket("user");
+    if (!socket || !user?._id || !rideId || !riderId) return;
 
-  console.log("socket", socket);
-  console.log("useEffect");
+    const token = localStorage.getItem("token");
+    socket.emit("user-login", token);
+    socket.emit("join-room", user._id);
 
-  // Ask server to join a room based on user ID
-  socket.emit("join-room", user._id);
+    // Start tracking and subscribe to updates
+    socket.emit("start-tracking-driver", { userId: user._id, riderId, rideId });
+    socket.emit("request-location", { userId: user._id, riderId });
 
-  const onDriverLocation = (data) => {
-    console.log("Got location update", data);
-    if (data?.location) {
-      const { latitude, longitude } = data.location;
-      setDriverLocationCurrent({
-        lat: latitude,
-        lng: longitude,
-      });
-    }
-  };
+    const onDriverLocation = (data) => {
+      console.log("new location update:",data);
+      if (data?.location) {
+        const { lat, lng } = data.location;
+        setDriverLocationCurrent({ lat, lng });
+      }
+    };
 
-  socket.on("driver-location", onDriverLocation);
+    socket.on("driver-location", onDriverLocation);
+    socket.on("live-driver-location", onDriverLocation);
 
-  return () => {
-    socket.off("driver-location", onDriverLocation);
-  };
-}, []);
+    return () => {
+      socket.off("driver-location", onDriverLocation);
+      socket.off("live-driver-location", onDriverLocation);
+    };
+  }, [user?._id, rideId, riderId]);
 
-  // Fetch route from OSRM whenever driver or user location changes
   useEffect(() => {
     if (!driverLocationCurrent || !userLocation) return;
+
     const fetchRoute = async () => {
-      console.log("dirverCurrent;",driverLocationCurrent);
-      console.log("userLocation:",userLocation);
       try {
         const res = await fetch(
-  `https://router.project-osrm.org/route/v1/driving/${driverLocationCurrent.lng},${driverLocationCurrent.lat};${userLocation.lng},${userLocation.lat}?overview=full&geometries=geojson`
-);
-
+          `https://router.project-osrm.org/route/v1/driving/${driverLocationCurrent.lng},${driverLocationCurrent.lat};${userLocation.lng},${userLocation.lat}?overview=full&geometries=geojson`
+        );
         const data = await res.json();
         if (data?.routes?.[0]?.geometry?.coordinates) {
           const coords = data.routes[0].geometry.coordinates.map(
@@ -104,13 +97,14 @@ useEffect(() => {
         console.error("Failed to fetch route:", err);
       }
     };
+
     fetchRoute();
   }, [driverLocationCurrent, userLocation]);
 
   return (
     <div style={{ height: '100vh', width: '100%' }}>
       <MapContainer
-        center={ [userLocation?.lat, userLocation?.lng] }
+        center={[userLocation?.lat, userLocation?.lng]}
         zoom={14}
         style={{ height: '100%', width: '100%' }}
       >
@@ -127,17 +121,11 @@ useEffect(() => {
         )}
 
         {driverLocationCurrent && (
-          <Marker
-            position={[driverLocationCurrent.lat, driverLocationCurrent.lng]}
-            icon={bikeIcon}
-          />
+          <Marker position={[driverLocationCurrent.lat, driverLocationCurrent.lng]} icon={bikeIcon} />
         )}
 
         {userLocation && (
-          <Marker
-            position={[userLocation.lat, userLocation.lng]}
-            icon={pinIcon}
-          />
+          <Marker position={[userLocation.lat, userLocation.lng]} icon={pinIcon} />
         )}
       </MapContainer>
     </div>

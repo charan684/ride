@@ -27,7 +27,7 @@ const AssignDriver = ({ booking, onAssigned }) => {
   const assignNearest = async () => {
       setAssigning(true);
       const pickup = booking.locations[0]; 
-      console.log("boking",booking); // Use first location as pickup [3]
+      console.log("booking",booking); // Use first location as pickup [3]
       try {
         // Fetch all drivers marked "free" from backend  
         const response = await axios.get(`${apiUrl}/active-riders`);  

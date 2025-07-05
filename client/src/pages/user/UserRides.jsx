@@ -23,27 +23,47 @@ const UserRides = ({ userId }) => {
   const [driverLocation, setDriverLocation] = useState(null);
 
   // Track Navigation handler
-  const handleTrackLocation = async (ride) => {
-    try {
-      const response = await getRideDetails(ride._id);
-      console.log(response)
-      const driverLoc = response.riderDetails.location;
-      setDriverLocation(driverLoc);
-      const customerLat = ride.destination?.coordinates?.lat || 17.263;
-      const customerLng = ride.destination?.coordinates?.lng || 78.233;
-      // const url = `/Navigation.html?driverLat=${driverLoc.lat}&driverLng=${driverLoc.lng}&customerLat=${customerLat}&customerLng=${customerLng}`;
-      // window.open(url, "_blank");
-      navigate(`/track-ride/${ride._id}`, {
-        state: {
-          userLocation: { lat: customerLat, lng: customerLng },
-          driverLocation: { lat: driverLoc.lat, lng: driverLoc.lng },
-        },
-      });
-    } catch (err) {
-      console.log(err);
-      // alert("Unable to fetch driver location.");
+const handleTrackLocation = async (ride) => {
+  try {
+    const response = await getRideDetails(ride._id);
+    console.log("📦 Ride details response:", response);
+
+    const { booking, riderDetails } = response;
+    const riderId = riderDetails?._id || booking?.driver;
+    const driverLoc = riderDetails?.location;
+
+    if (!riderId || !driverLoc?.lat || !driverLoc?.lng) {
+      alert("Driver location or ID not available.");
+      return;
     }
-  };
+
+    const destination = booking?.locations?.[0];
+    if (!destination || !destination.lat || !destination.lng) {
+      alert("User destination not available.");
+      return;
+    }
+
+    navigate(`/track-ride/${booking._id}`, {
+      state: {
+        userLocation: {
+          lat: parseFloat(destination.lat),
+          lng: parseFloat(destination.lng),
+        },
+        driverLocation: {
+          lat: parseFloat(driverLoc.lat),
+          lng: parseFloat(driverLoc.lng),
+          riderId,
+        },
+        rideId: booking._id,
+      },
+    });
+  } catch (err) {
+    console.error("❌ Error in handleTrackLocation:", err);
+    alert("Unable to fetch ride details.");
+  }
+};
+
+
   // Fetch ride details
 
   const getRideDetails = async (id) => {
@@ -59,35 +79,46 @@ const UserRides = ({ userId }) => {
       console.log(err);
     }
   };
-  useEffect(() => {
-    const fetchRides = async () => {
-      try {
-        const res = await axios.get(`${apiUrl}/user/my-rides`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log(res.data)
-        setRides(res.data);
-      } catch (err) {
-        setRides([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRides();
-    const socket = socketInstance.getSocket("user");
-    socket.on("ride-complete", (data) => {
-      const {rideId} = data;
-      const updatedRides = rides.map((ride) => {
-        if (ride._id === rideId) {
-          return { ...ride, status: "completed" };
-        }
-        return ride;
+useEffect(() => {
+  const fetchRides = async () => {
+    try {
+      const res = await axios.get(`${apiUrl}/user/my-rides`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      setRides(updatedRides);
-  })
-    
-  }, []);
+      setRides(res.data);
+    } catch (err) {
+      setRides([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchRides();
+
+  const socket = socketInstance.getSocket("user");
+
+  // ✅ Update status when ride is marked complete
+  socket.on("ride-complete", (data) => {
+    const { rideId } = data;
+    const updatedRides = rides.map((ride) =>
+      ride._id === rideId ? { ...ride, status: "completed" } : ride
+    );
+    setRides(updatedRides);
+  });
+
+  // ✅ Reload ride data when ride is assigned to user
+  socket.on("ride-booked", (data) => {
+    console.log("📦 Ride assigned:", data);
+    // Optional: show toast or alert
+    fetchRides(); // 🔁 Refresh rides from backend
+  });
+
+  return () => {
+    socket.off("ride-complete");
+    socket.off("ride-booked");
+  };
+}, []);
+
 
   if (loading) {
     return (

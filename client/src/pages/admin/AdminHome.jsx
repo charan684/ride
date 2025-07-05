@@ -14,12 +14,16 @@ import {
 import axios from "axios";
 import MapContext from "../../context/AppContext";
 import { useNavigate } from "react-router-dom";
+import AdminRidesManager from "./AdminRidesManager";
+import AdminDriverMap from "./AdminMap";
 
 const AdminDashboard = () => {
   const { apiUrl } = useContext(MapContext);
   const [rides, setRides] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [selectedRide, setSelectedRide] = useState(null);
+const [driverLoading, setDriverLoading] = useState(false);
+const [modalDrivers, setModalDrivers] = useState([]);
 
   const [isAssigning, setIsAssigning] = useState(false);
   const [showDriverModal, setShowDriverModal] = useState(false);
@@ -330,165 +334,185 @@ const handleNewDriver = (driver) => {
                   >
                     Driver Management
                   </button>
+                  <button
+                    onClick={() => setActiveTab("maps")}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === "drivers"
+                        ? "border-blue-500 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+maps                  </button>
                 </nav>
               </div>
 
               {activeTab === "rides" && (
-                <div className="p-6">
-                  {/* Rides Table */}
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Ride Details
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Route
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Fare
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {[...rides]
-                          .sort((a, b) => {
-                            const order = { requested: 1, assigned: 2 };
-                            return (
-                              (order[a.status] || 3) - (order[b.status] || 3)
-                            );
-                          })
-                          .map((ride) => (
-                            <tr key={ride._id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center">
-                                  <div className="flex-shrink-0 h-10 w-10">
-                                    <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                      <span className="text-sm font-medium text-gray-700">
-                                        {/* {ride.userName.charAt(0)} */}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="ml-4">
-                                    <div className="text-sm font-medium text-gray-900">
-                                      {ride.userName}
-                                    </div>
-                                    <div className="text-sm text-gray-500">
-                                      {ride.userPhone}
-                                    </div>
-                                    <div className="text-xs text-gray-400">
-                                      {new Date(ride.bookedAt).toLocaleString()}
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
+//                 <div className="p-6">
+//                   {/* Rides Table */}
+//                   <div className="overflow-x-auto">
+//                     <table className="min-w-full divide-y divide-gray-200">
+//                       <thead className="bg-gray-50">
+//                         <tr>
+//                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                             Ride Details
+//                           </th>
+//                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                             Route
+//                           </th>
+//                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                             Status
+//                           </th>
+//                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                             Fare
+//                           </th>
+//                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+//                             Actions
+//                           </th>
+//                         </tr>
+//                       </thead>
+//                       <tbody className="bg-white divide-y divide-gray-200">
+//                         {[...rides]
+//                           .sort((a, b) => {
+//                             const order = { requested: 1, assigned: 2 };
+//                             return (
+//                               (order[a.status] || 3) - (order[b.status] || 3)
+//                             );
+//                           })
+//                           .map((ride) => (
+//                             <tr key={ride._id} className="hover:bg-gray-50">
+//                               <td className="px-6 py-4 whitespace-nowrap">
+//                                 <div className="flex items-center">
+//                                   <div className="flex-shrink-0 h-10 w-10">
+//                                     <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+//                                       <span className="text-sm font-medium text-gray-700">
+//                                         {/* {ride.userName.charAt(0)} */}
+//                                       </span>
+//                                     </div>
+//                                   </div>
+//                                   <div className="ml-4">
+//                                     <div className="text-sm font-medium text-gray-900">
+//                                       {ride.userName}
+//                                     </div>
+//                                     <div className="text-sm text-gray-500">
+//                                       {ride.userPhone}
+//                                     </div>
+//                                     <div className="text-xs text-gray-400">
+//                                       {new Date(ride.bookedAt).toLocaleString()}
+//                                     </div>
+//                                   </div>
+//                                 </div>
+//                               </td>
 
-                              {/* <td className="px-6 py-4">
-                                <div className="space-y-1">
-                                  <div className="flex items-center text-sm">
-                                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                    <span className="text-gray-900 truncate max-w-xs">
-                                      {ride.locations[0].lat}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center text-sm">
-                                    <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                                    <span className="text-gray-900 truncate max-w-xs">
-                                      {ride.locations[ride.locations.length - 1].lat}
-                                    </span>
-                                  </div>
-                                </div>
-                              </td> */}
-                              <td className="px-6 py-4">
-                                <div className="space-y-1 text-sm text-gray-900">
-                                  <div className="flex items-center space-x-2">
-                                    <div className="flex items-center space-x-1">
-                                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                      <span className="font-medium truncate max-w-[120px]">
-                                        From :
-                                      </span>
-                                    </div>
-                                    <span className="truncate max-w-[140px] text-gray-800">
-                                      {ride?.locations[0]?.lat},{" "}
-                                      {ride?.locations[0]?.lng}
-                                    </span>
-                                  </div>
+//                               {/* <td className="px-6 py-4">
+//                                 <div className="space-y-1">
+//                                   <div className="flex items-center text-sm">
+//                                     <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+//                                     <span className="text-gray-900 truncate max-w-xs">
+//                                       {ride.locations[0].lat}
+//                                     </span>
+//                                   </div>
+//                                   <div className="flex items-center text-sm">
+//                                     <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+//                                     <span className="text-gray-900 truncate max-w-xs">
+//                                       {ride.locations[ride.locations.length - 1].lat}
+//                                     </span>
+//                                   </div>
+//                                 </div>
+//                               </td> */}
+//                               <td className="px-6 py-4">
+//                                 <div className="space-y-1 text-sm text-gray-900">
+//                                   <div className="flex items-center space-x-2">
+//                                     <div className="flex items-center space-x-1">
+//                                       <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+//                                       <span className="font-medium truncate max-w-[120px]">
+//                                         From :
+//                                       </span>
+//                                     </div>
+//                                     <span className="truncate max-w-[140px] text-gray-800">
+//                                       {ride?.locations[0]?.lat},{" "}
+//                                       {ride?.locations[0]?.lng}
+//                                     </span>
+//                                   </div>
 
-                                  <div className="flex flex-row items-center justify-center text-gray-400 text-xs">
-                                    <div className="w-full h-px border-t border-dashed border-black mt-1 mb-1"></div>
-                                  </div>
+//                                   <div className="flex flex-row items-center justify-center text-gray-400 text-xs">
+//                                     <div className="w-full h-px border-t border-dashed border-black mt-1 mb-1"></div>
+//                                   </div>
 
-                                  <div className="flex items-center space-x-2">
-                                    <div className="flex items-center space-x-1">
-                                      <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                                      <span className="font-medium truncate max-w-[120px]">
-                                        To :
-                                      </span>
-                                    </div>
-                                    <span className="truncate max-w-[140px] text-gray-800">
-                                      {
-                                        ride?.locations[
-                                          ride?.locations.length - 1
-                                        ]?.lat
-                                      }
-                                      ,{" "}
-                                      {
-                                        ride.locations[
-                                          ride.locations.length - 1
-                                        ].lng
-                                      }
-                                    </span>
-                                  </div>
-                                </div>
-                              </td>
+//                                   <div className="flex items-center space-x-2">
+//                                     <div className="flex items-center space-x-1">
+//                                       <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+//                                       <span className="font-medium truncate max-w-[120px]">
+//                                         To :
+//                                       </span>
+//                                     </div>
+//                                     <span className="truncate max-w-[140px] text-gray-800">
+//                                       {
+//                                         ride?.locations[
+//                                           ride?.locations.length - 1
+//                                         ]?.lat
+//                                       }
+//                                       ,{" "}
+//                                       {
+//                                         ride.locations[
+//                                           ride.locations.length - 1
+//                                         ].lng
+//                                       }
+//                                     </span>
+//                                   </div>
+//                                 </div>
+//                               </td>
 
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span
-                                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                                    ride.status
-                                  )}`}
-                                >
-                                  {ride.status}
-                                </span>
-                              </td>
+//                               <td className="px-6 py-4 whitespace-nowrap">
+//                                 <span
+//                                   className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+//                                     ride.status
+//                                   )}`}
+//                                 >
+//                                   {ride.status}
+//                                 </span>
+//                               </td>
 
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                ${ride.fare}
-                              </td>
+//                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+//                                 ${ride.fare}
+//                               </td>
 
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                {ride.status === "requested" ? (
-                                  <button
-                                    onClick={() => {
-                                      console.log(ride);
-                                      setSelectedRide(ride);
-                                      setShowDriverModal(true);
-                                    }}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
-                                  >
-                                    Assign Driver
-                                  </button>
-                                ) : (
-                                  <span className="text-gray-500">
-                                    {ride.driver
-                                      ? `Driver: ${ride.driver}`
-                                      : "Driver Assigned"}
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+//                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+//                                 {ride.status === "requested" ? (
+//                                   <button
+//                                     onClick={async () => {
+//   setSelectedRide(ride);
+//   setShowDriverModal(true);
+//   setDriverLoading(true);
+//   try {
+//     const response = await axios.get(`${apiUrl}/active-riders`);
+//     setModalDrivers(response.data);
+//   } catch (err) {
+//     console.error("Failed to fetch drivers:", err);
+//     setModalDrivers([]);
+//   } finally {
+//     setDriverLoading(false);
+//   }
+// }}
+
+//                                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+//                                   >
+//                                     Assign Driver
+//                                   </button>
+//                                 ) : (
+//                                   <span className="text-gray-500">
+//                                     {ride.driver
+//                                       ? `Driver: ${ride.driver}`
+//                                       : "Driver Assigned"}
+//                                   </span>
+//                                 )}
+//                               </td>
+//                             </tr>
+//                           ))}
+//                       </tbody>
+//                     </table>
+//                   </div>
+//                 </div>
+<AdminRidesManager/>
               )}
 
               {activeTab === "drivers" && (
@@ -562,6 +586,9 @@ const handleNewDriver = (driver) => {
                     ))}
                   </div>
                 </div>
+              )}
+              {activeTab==='maps' &&(
+                <AdminDriverMap/>
               )}
             </div>
           </div>

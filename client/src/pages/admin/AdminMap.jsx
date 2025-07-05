@@ -27,8 +27,8 @@ const AdminDriverMap = () => {
         setDriverLocations((prev) => ({
           ...prev,
           [data.riderId]: {
-            lat: data.location.latitude,
-            lng: data.location.longitude,
+            lat: data.location.lat,
+            lng: data.location.lng,
             name: data.username || `Driver ${data.riderId}`,
           },
         }));
