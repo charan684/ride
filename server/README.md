@@ -55,11 +55,54 @@ The server will typically start on `http://localhost:8001`.
 
 If you are a new developer joining the project, this section will help you understand the architectural flow.
 
+### User Types & Creation Flow
+
+The system supports three distinct roles within the `User` model, created via different API flows:
+
+1. **Users (Riders)**
+   - **Role:** `user`
+   - **Creation Flow:** Created via the standard signup endpoint (`POST /api/auth/signup` or similar depending on routing). The frontend typically provides a registration form. Passwords are automatically hashed using bcrypt.
+
+2. **Drivers (Riders)**
+   - **Role:** `rider` (Note: The codebase uses `"rider"` to denote the driver persona).
+   - **Creation Flow:** Created via a dedicated driver signup endpoint (`POST /api/auth/driver-signup` handled by `driverSignup` controller).
+   - **Properties:** In addition to standard fields, drivers have a `status` ("free", "inactive", "assigned") and broadcast their `location`.
+
+3. **Administrators**
+   - **Role:** `admin`
+   - **Creation Flow:** **Manual Database Seeding**. There is currently no open API endpoint to register an admin due to security reasons. To create an admin, you must manually insert a record into the MongoDB `users` collection or update an existing user's role to `"admin"`.
+   - **Privileges:** Admins have access to the `/admin` protected routes on the frontend to assign drivers and view the live map.
+
 ### Tech Stack
 - **Framework:** Express.js
 - **Database:** MongoDB (using Mongoose ODM)
 - **Real-Time Communication:** Socket.io
 - **Utilities:** Axios, node-geocoder, jsonwebtoken, bcrypt
+### Database Structure (Mongoose Models)
+
+The system uses MongoDB to store essential data. Here is the architecture of the primary collections:
+
+#### 1. User Model (`User`)
+Stores information for riders, drivers, and admins.
+- **`username`** (String): Required, trimmed.
+- **`email`** (String): Required, unique, lowercase.
+- **`password`** (String): Required (hashed).
+- **`phone`** (String): Required, unique.
+- **`role`** (String): "user", "admin", or "rider" (default: "user").
+- **`location`**: Object containing `lat` and `lng` (Strings) for active tracking.
+- **`status`** (String): "free", "inactive", or "assigned" (default: "free").
+- **`createdAt`** (Date): Default now.
+
+#### 2. Ride Model (`Ride`)
+Records the details and lifecycle of each ride booking.
+- **`user`** (ObjectId): Reference to the `User` who booked the ride.
+- **`locations`** (Array): Array of location objects representing the route/stops (default: empty array).
+- **`status`** (String): "requested", "assigned", "in_progress", "completed", or "cancelled" (default: "requested").
+- **`driver`** (ObjectId): Reference to the `User` (rider role) acting as the driver (default: null).
+- **`userName`** (String): Name of the user booking the ride.
+- **`userPhone`** (String): Phone number of the user.
+- **`bookedAt`** (Date): Timestamp when requested (default: now).
+- **`completedAt`** (Date): Timestamp when completed.
 
 ### Project Structure
 ```text

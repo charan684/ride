@@ -58,6 +58,22 @@ You can preview the production build using `npm run preview`.
 
 For developers looking to contribute, here is an executive summary of how the frontend architecture is wired.
 
+### User Types & Creation Flow
+
+The system supports three distinct personas:
+
+1. **Users/Riders (`role: "user"`)**
+   - **Creation Flow:** Registered via the **Sign Up** page (`/signup` route). This sends a request to the server's standard user signup endpoint.
+   - **Access:** Has access to the main dashboard, ride booking form (`/user/home`), and ride tracking map (`/user/track`).
+
+2. **Drivers (`role: "rider"`)**
+   - **Creation Flow:** Registered via a specific driver registration view or endpoint (`/api/auth/driver-signup` on the backend). 
+   - **Access:** Used primarily for broadcasting coordinates via WebSockets rather than distinct frontend portal views in this client repository.
+
+3. **Administrators (`role: "admin"`)**
+   - **Creation Flow:** There is **no signup form** for administrators to prevent unauthorized access. Admins must be manually created in the database (e.g., changing a user's `role` to `"admin"` directly in MongoDB).
+   - **Access:** Unlocks the protected `/admin` routing group, granting access to `AdminHome`, `AdminRidesManager`, and the global `AdminMap`.
+
 ### Tech Stack
 - **Framework:** React 19 + Vite
 - **Routing:** React Router DOM (v7)
