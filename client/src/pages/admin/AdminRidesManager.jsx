@@ -16,15 +16,13 @@ const AdminRidesManager = () => {
       const res = await axios.get(`${apiUrl}/bookings/requested`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
+      // Sort newest-first and normalise shape to { booking, locations }
       const rides = res.data
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .map((ride) => ({
-          booking: { _id: ride._id, ...ride },
+          booking: ride,          // ride IS the booking — keep _id at top level
           locations: ride.locations,
-        }))
-        .sort(
-          (a, b) =>
-            new Date(b.booking.createdAt) - new Date(a.booking.createdAt)
-        );
+        }));
       setRideRequests(rides);
     } catch (err) {
       console.error("Error fetching requested rides:", err);
@@ -57,8 +55,10 @@ const AdminRidesManager = () => {
     const socket = socketInstance.getSocket("admin");
 
     socket.on("new_ride_request", (data) => {
+      // Client emits { booking: newBooking, locations }
+      const booking = data.booking ?? data; // fallback for old shape
       setRideRequests((prev) => [
-        { booking: { _id: data._id, ...data }, locations: data.locations },
+        { booking, locations: data.locations ?? booking.locations },
         ...prev,
       ]);
     });
@@ -110,6 +110,10 @@ const AdminRidesManager = () => {
   // Assign selected driver to a ride
   const assignDriver = async (rideId) => {
     const driverId = selectedDrivers[rideId];
+    console.log("🚀 assignDriver called — rideId:", rideId, "| driverId:", driverId);
+    if (!rideId || rideId === "undefined") {
+      return alert("Error: Invalid ride ID (" + rideId + "). Please refresh and try again.");
+    }
     if (!driverId) {
       return alert("Please select a driver.");
     }
@@ -172,7 +176,7 @@ const AdminRidesManager = () => {
                   {locations
                     .map(
                       (loc, i) =>
-                        `#${i + 1} (${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)})`
+                        `#${i + 1} (${parseFloat(loc.lat || 0).toFixed(4)}, ${parseFloat(loc.lng || 0).toFixed(4)})`
                     )
                     .join(" → ")}
                 </p>

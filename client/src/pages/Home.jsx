@@ -1,23 +1,23 @@
 
-import React, { useState, useEffect, useContext } from "react";  
-import { MapPin, X } from "lucide-react";  
-import axios from "axios";  
-import MapComponent from "../components/MapComponent";  
-import MapContext from "../context/AppContext";  
+import React, { useState, useEffect, useContext } from "react";
+import { MapPin, X } from "lucide-react";
+import axios from "axios";
+import MapComponent from "../components/MapComponent";
+import MapContext from "../context/AppContext";
 import AssignDriver from "./AssignRider";
 import socketInstance from "../services/socketService";
 
 const Home = () => {
-  const { setDestLocation, apiUrl } = useContext(MapContext);  
-  const [locations, setLocations] = useState([]);  
-  const [currentLatitude, setCurrentLatitude] = useState("");  
-  const [currentLongitude, setCurrentLongitude] = useState("");  
-  const [booking, setBooking] = useState(null);  
+  const { setDestLocation, apiUrl } = useContext(MapContext);
+  const [locations, setLocations] = useState([]);
+  const [currentLatitude, setCurrentLatitude] = useState("");
+  const [currentLongitude, setCurrentLongitude] = useState("");
+  const [booking, setBooking] = useState(null);
   const [assignmentResult, setAssignmentResult] = useState(null);
 
   // Input validation for latitude and longitude
   const isValidLatitude = (lat) =>
-    /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$/.test(lat);  
+    /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?)$/.test(lat);
   const isValidLongitude = (lng) =>
     /^[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/.test(lng);
 
@@ -35,66 +35,65 @@ const Home = () => {
         lng: parseFloat(currentLongitude.trim()),
         visited: false
       };
-      setLocations([...locations, newLocation]);  
-      setCurrentLatitude("");  
-      setCurrentLongitude("");  
+      setLocations([...locations, newLocation]);
+      setCurrentLatitude("");
+      setCurrentLongitude("");
     }
   };
 
   // Remove a location by its generated id
   const removeLocation = (id) => {
-    setLocations((prev) => prev.filter((loc) => loc.id !== id));  
+    setLocations((prev) => prev.filter((loc) => loc.id !== id));
   };
 
   // Submit booking and trigger nearest-driver assignment
   const handleSubmit = async () => {
-  try {
-    const response = await axios.post(
-      `${apiUrl}/bookings/new`,
-      locations.map(({ lat, lng, visited }) => ({ lat, lng, visited })),
-      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-    );
-    const newBooking = response.data.newBooking;
-    setBooking(newBooking);
-    setDestLocation(locations);
+    try {
+      const response = await axios.post(
+        `${apiUrl}/bookings/new`,
+        locations.map(({ lat, lng, visited }) => ({ lat, lng, visited })),
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+      );
+      const newBooking = response.data.newBooking;
+      setBooking(newBooking);
+      setDestLocation(locations);
 
-    const socket = socketInstance.getSocket("user"); // 👈 get actual socket
-    socket.emit("new_ride_request", {
-      booking: newBooking,
-      locations,
-    });
+      const socket = socketInstance.getSocket("user");
+      socket.emit("new_ride_request", {
+        booking: newBooking,
+        locations,
+      });
 
-
-    console.log("Booking created and sent to admin", newBooking);
-  } catch (error) {
-    console.error("Booking creation failed", error);
-    alert("Failed to create booking");
-  }
-};
+      console.log("Booking created and sent to admin", newBooking);
+    } catch (error) {
+      console.error("Booking creation failed", error);
+      alert("Failed to create booking");
+    }
+  };
 
 
   // Callback from AssignDriver on assignment completion
   const handleAssigned = (driver) => {
     if (driver) {
-      alert(`Assigned driver: ${driver.username}`);  
+      alert(`Assigned driver: ${driver.username}`);
     } else {
-      alert("No available drivers at this time");  
+      alert("No available drivers at this time");
     }
-    setAssignmentResult(driver);  
-    setBooking(null);  
+    setAssignmentResult(driver);
+    setBooking(null);
   };
 
   // Fetch initial available drivers for warm-up (optional)
   useEffect(() => {
     // This can pre-fetch or subscribe via socket if needed
-    
+
   }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
+
           {/* Left: Form */}
           <div className="space-y-6">
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
@@ -112,11 +111,10 @@ const Home = () => {
                   value={currentLatitude}
                   onChange={(e) => setCurrentLatitude(e.target.value)}
                   placeholder="Enter latitude (e.g., 12.9716)"
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    currentLatitude && !isValidLatitude(currentLatitude)
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${currentLatitude && !isValidLatitude(currentLatitude)
+                    ? "border-red-500"
+                    : "border-gray-300"
+                    }`}
                 />
               </div>
 
@@ -130,11 +128,10 @@ const Home = () => {
                   value={currentLongitude}
                   onChange={(e) => setCurrentLongitude(e.target.value)}
                   placeholder="Enter longitude (e.g., 77.5946)"
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    currentLongitude && !isValidLongitude(currentLongitude)
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${currentLongitude && !isValidLongitude(currentLongitude)
+                    ? "border-red-500"
+                    : "border-gray-300"
+                    }`}
                 />
               </div>
 
@@ -208,6 +205,20 @@ const Home = () => {
         {/* {booking && (
           <AssignDriver booking={booking} onAssigned={handleAssigned} />
         )} */}
+
+        {/* Booking Confirmation with Fare */}
+        {booking && (
+          <div className="mt-6 bg-green-50 border border-green-200 rounded-2xl p-5 text-center shadow-sm">
+            <p className="text-green-700 font-bold text-lg mb-1">✅ Booking Confirmed!</p>
+            <p className="text-gray-700 text-sm mb-2">
+              Booking ID: <span className="font-mono font-medium">{booking._id}</span>
+            </p>
+            <p className="text-2xl font-bold text-green-700">
+              Estimated Fare: ₹{booking.fare?.toFixed(2) ?? '—'}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">₹30 base + ₹12/km</p>
+          </div>
+        )}
 
         {/* Display Assignment Result */}
         {assignmentResult !== null && (

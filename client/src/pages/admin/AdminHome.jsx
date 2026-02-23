@@ -22,8 +22,8 @@ const AdminDashboard = () => {
   const [rides, setRides] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [selectedRide, setSelectedRide] = useState(null);
-const [driverLoading, setDriverLoading] = useState(false);
-const [modalDrivers, setModalDrivers] = useState([]);
+  const [driverLoading, setDriverLoading] = useState(false);
+  const [modalDrivers, setModalDrivers] = useState([]);
 
   const [isAssigning, setIsAssigning] = useState(false);
   const [showDriverModal, setShowDriverModal] = useState(false);
@@ -33,15 +33,17 @@ const [modalDrivers, setModalDrivers] = useState([]);
   const navigate = useNavigate();
   const handleNewRide = (ride) => {
     console.log("New ride received: ", ride);
-    setRides((prevRides) => [...prevRides, ride]);
+    // Prepend so the newest ride appears at the top
+    setRides((prevRides) => [ride, ...prevRides]);
   };
   const fetchBookings = async () => {
     setLoading(true);
-
     const bookings = await axios.get(`${apiUrl}/bookings`);
-    // console.log(bookings);
-
-    setRides(bookings.data);
+    // Sort newest first
+    const sorted = [...bookings.data].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    setRides(sorted);
     setLoading(false);
   };
 
@@ -55,44 +57,52 @@ const [modalDrivers, setModalDrivers] = useState([]);
   //   console.log("New driver received: ", driver);
   //   setDrivers((prevDrivers) => [...prevDrivers, driver]);
   // };
-const handleNewDriver = (driver) => {
-  setDrivers((prevDrivers) => {
-    const exists = prevDrivers.some((d) => d._id === driver._id);
-    if (!exists) {
-      return [...prevDrivers, driver];
-    }
-    return prevDrivers;
-  });
-};
+  const handleNewDriver = (driver) => {
+    setDrivers((prevDrivers) => {
+      const exists = prevDrivers.some((d) => d._id === driver._id);
+      if (!exists) {
+        return [...prevDrivers, driver];
+      }
+      return prevDrivers;
+    });
+  };
 
   useEffect(() => {
     const socket = socketInstance.getSocket("admin");
     socket.on("new-ride", handleNewRide);
 
     socket.on("new-driver", handleNewDriver);
-    socket.on("ride-complete", (data) => {
-      const { rideId } = data;
-      const updatedRides = rides.map((ride) => {
-        if (ride._id === rideId) {
-          return { ...ride, status: "completed" };
-        }
-        return ride;
-      });
-      setRides(updatedRides);
+    socket.on("ride-complete", ({ rideId, driverId }) => {
+      // Mark ride as completed
+      setRides((prev) =>
+        prev.map((ride) =>
+          ride._id === rideId ? { ...ride, status: "completed" } : ride
+        )
+      );
+      // Mark the driver as free so they appear available for the next ride
+      if (driverId) {
+        setDrivers((prev) =>
+          prev.map((d) =>
+            d._id === driverId || d.driverId === driverId
+              ? { ...d, status: "free" }
+              : d
+          )
+        );
+      }
     });
     socket.on("driver-disconnected", (driverId) => {
-      const updatedDrivers = drivers.filter((d) => d.id !== driverId);
-      setDrivers(updatedDrivers);
+      setDrivers((prev) => prev.filter((d) => d._id !== driverId && d.driverId !== driverId));
     });
     fetchBookings();
-
     fetchAvailableDrivers();
-    // Simulate fetching drivers data
     return () => {
       socket.off("new-ride", handleNewRide);
       socket.off("new-driver", handleNewDriver);
+      socket.off("ride-complete");
+      socket.off("driver-disconnected");
     };
   }, []);
+
 
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
     const R = 6371; // Earth's radius in km
@@ -101,9 +111,9 @@ const handleNewDriver = (driver) => {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
@@ -127,35 +137,39 @@ const handleNewDriver = (driver) => {
 
   const assignDriver = async (rideId, driverId) => {
     setIsAssigning(true);
-    console.log(rideId);
-    if (!rideId) {
+    console.log('Assigning driver to ride:', rideId, driverId);
+    if (!rideId || !driverId) {
+      console.error('assignDriver: missing rideId or driverId', { rideId, driverId });
       setIsAssigning(false);
       return;
     }
-    const response = await axios.post(
-      `${apiUrl}/bookings/assignDriver/${rideId}`,
-      {
-        driverId,
-      }
-    );
-    console.log(response);
-    // Simulate API call
-    // await new Promise((resolve) => setTimeout(resolve, 1500));
-    setRides((prevRides) =>
-      prevRides.map((ride) =>
-        ride._id === rideId
-          ? { ...ride, status: "assigned", assignedDriver: driverId }
-          : ride
-      )
-    );
-    setDrivers((prevDrivers) =>
-      prevDrivers.map((driver) =>
-        driver.id === driverId ? { ...driver, status: "busy" } : driver
-      )
-    );
-    setIsAssigning(false);
-    setShowDriverModal(false);
-    setSelectedRide(null);
+    try {
+      const response = await axios.post(
+        `${apiUrl}/bookings/assignDriver/${rideId}`,
+        { driverId },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
+      console.log('Driver assigned:', response.data);
+      setRides((prevRides) =>
+        prevRides.map((ride) =>
+          ride._id === rideId
+            ? { ...ride, status: 'assigned', driver: driverId }
+            : ride
+        )
+      );
+      setDrivers((prevDrivers) =>
+        prevDrivers.map((driver) =>
+          driver._id === driverId ? { ...driver, status: 'busy' } : driver
+        )
+      );
+    } catch (err) {
+      console.error('assignDriver failed:', err);
+      alert('Failed to assign driver. Please try again.');
+    } finally {
+      setIsAssigning(false);
+      setShowDriverModal(false);
+      setSelectedRide(null);
+    }
   };
 
   const handleLogout = async () => {
@@ -296,12 +310,12 @@ const handleNewDriver = (driver) => {
                     <p className="text-sm font-medium text-gray-600">
                       Total Revenue
                     </p>
-                    {/* <p className="text-3xl font-bold text-purple-600">
-                      $
-                      {rides
-                        .reduce((sum, ride) => sum + ride.fare, 0)
-                        .toFixed(2)}
-                    </p> */}
+                    <p className="text-3xl font-bold text-purple-600">
+                      ₹{
+                        rides
+                          .reduce((sum, ride) => sum + (ride.fare || 0), 0)
+                          .toFixed(2)}
+                    </p>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                     <Wallet className="w-6 h-6 text-purple-600" />
@@ -316,203 +330,200 @@ const handleNewDriver = (driver) => {
                 <nav className="-mb-px flex space-x-8 px-6">
                   <button
                     onClick={() => setActiveTab("rides")}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === "rides"
-                        ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "rides"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      }`}
                   >
                     Ride Management
                   </button>
                   <button
                     onClick={() => setActiveTab("drivers")}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === "drivers"
-                        ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "drivers"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      }`}
                   >
                     Driver Management
                   </button>
                   <button
                     onClick={() => setActiveTab("maps")}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === "drivers"
-                        ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "drivers"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      }`}
                   >
-maps                  </button>
+                    maps                  </button>
                 </nav>
               </div>
 
               {activeTab === "rides" && (
-//                 <div className="p-6">
-//                   {/* Rides Table */}
-//                   <div className="overflow-x-auto">
-//                     <table className="min-w-full divide-y divide-gray-200">
-//                       <thead className="bg-gray-50">
-//                         <tr>
-//                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                             Ride Details
-//                           </th>
-//                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                             Route
-//                           </th>
-//                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                             Status
-//                           </th>
-//                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                             Fare
-//                           </th>
-//                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                             Actions
-//                           </th>
-//                         </tr>
-//                       </thead>
-//                       <tbody className="bg-white divide-y divide-gray-200">
-//                         {[...rides]
-//                           .sort((a, b) => {
-//                             const order = { requested: 1, assigned: 2 };
-//                             return (
-//                               (order[a.status] || 3) - (order[b.status] || 3)
-//                             );
-//                           })
-//                           .map((ride) => (
-//                             <tr key={ride._id} className="hover:bg-gray-50">
-//                               <td className="px-6 py-4 whitespace-nowrap">
-//                                 <div className="flex items-center">
-//                                   <div className="flex-shrink-0 h-10 w-10">
-//                                     <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-//                                       <span className="text-sm font-medium text-gray-700">
-//                                         {/* {ride.userName.charAt(0)} */}
-//                                       </span>
-//                                     </div>
-//                                   </div>
-//                                   <div className="ml-4">
-//                                     <div className="text-sm font-medium text-gray-900">
-//                                       {ride.userName}
-//                                     </div>
-//                                     <div className="text-sm text-gray-500">
-//                                       {ride.userPhone}
-//                                     </div>
-//                                     <div className="text-xs text-gray-400">
-//                                       {new Date(ride.bookedAt).toLocaleString()}
-//                                     </div>
-//                                   </div>
-//                                 </div>
-//                               </td>
+                //                 <div className="p-6">
+                //                   {/* Rides Table */}
+                //                   <div className="overflow-x-auto">
+                //                     <table className="min-w-full divide-y divide-gray-200">
+                //                       <thead className="bg-gray-50">
+                //                         <tr>
+                //                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                //                             Ride Details
+                //                           </th>
+                //                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                //                             Route
+                //                           </th>
+                //                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                //                             Status
+                //                           </th>
+                //                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                //                             Fare
+                //                           </th>
+                //                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                //                             Actions
+                //                           </th>
+                //                         </tr>
+                //                       </thead>
+                //                       <tbody className="bg-white divide-y divide-gray-200">
+                //                         {[...rides]
+                //                           .sort((a, b) => {
+                //                             const order = { requested: 1, assigned: 2 };
+                //                             return (
+                //                               (order[a.status] || 3) - (order[b.status] || 3)
+                //                             );
+                //                           })
+                //                           .map((ride) => (
+                //                             <tr key={ride._id} className="hover:bg-gray-50">
+                //                               <td className="px-6 py-4 whitespace-nowrap">
+                //                                 <div className="flex items-center">
+                //                                   <div className="flex-shrink-0 h-10 w-10">
+                //                                     <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                //                                       <span className="text-sm font-medium text-gray-700">
+                //                                         {/* {ride.userName.charAt(0)} */}
+                //                                       </span>
+                //                                     </div>
+                //                                   </div>
+                //                                   <div className="ml-4">
+                //                                     <div className="text-sm font-medium text-gray-900">
+                //                                       {ride.userName}
+                //                                     </div>
+                //                                     <div className="text-sm text-gray-500">
+                //                                       {ride.userPhone}
+                //                                     </div>
+                //                                     <div className="text-xs text-gray-400">
+                //                                       {new Date(ride.bookedAt).toLocaleString()}
+                //                                     </div>
+                //                                   </div>
+                //                                 </div>
+                //                               </td>
 
-//                               {/* <td className="px-6 py-4">
-//                                 <div className="space-y-1">
-//                                   <div className="flex items-center text-sm">
-//                                     <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-//                                     <span className="text-gray-900 truncate max-w-xs">
-//                                       {ride.locations[0].lat}
-//                                     </span>
-//                                   </div>
-//                                   <div className="flex items-center text-sm">
-//                                     <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-//                                     <span className="text-gray-900 truncate max-w-xs">
-//                                       {ride.locations[ride.locations.length - 1].lat}
-//                                     </span>
-//                                   </div>
-//                                 </div>
-//                               </td> */}
-//                               <td className="px-6 py-4">
-//                                 <div className="space-y-1 text-sm text-gray-900">
-//                                   <div className="flex items-center space-x-2">
-//                                     <div className="flex items-center space-x-1">
-//                                       <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-//                                       <span className="font-medium truncate max-w-[120px]">
-//                                         From :
-//                                       </span>
-//                                     </div>
-//                                     <span className="truncate max-w-[140px] text-gray-800">
-//                                       {ride?.locations[0]?.lat},{" "}
-//                                       {ride?.locations[0]?.lng}
-//                                     </span>
-//                                   </div>
+                //                               {/* <td className="px-6 py-4">
+                //                                 <div className="space-y-1">
+                //                                   <div className="flex items-center text-sm">
+                //                                     <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                //                                     <span className="text-gray-900 truncate max-w-xs">
+                //                                       {ride.locations[0].lat}
+                //                                     </span>
+                //                                   </div>
+                //                                   <div className="flex items-center text-sm">
+                //                                     <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                //                                     <span className="text-gray-900 truncate max-w-xs">
+                //                                       {ride.locations[ride.locations.length - 1].lat}
+                //                                     </span>
+                //                                   </div>
+                //                                 </div>
+                //                               </td> */}
+                //                               <td className="px-6 py-4">
+                //                                 <div className="space-y-1 text-sm text-gray-900">
+                //                                   <div className="flex items-center space-x-2">
+                //                                     <div className="flex items-center space-x-1">
+                //                                       <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                //                                       <span className="font-medium truncate max-w-[120px]">
+                //                                         From :
+                //                                       </span>
+                //                                     </div>
+                //                                     <span className="truncate max-w-[140px] text-gray-800">
+                //                                       {ride?.locations[0]?.lat},{" "}
+                //                                       {ride?.locations[0]?.lng}
+                //                                     </span>
+                //                                   </div>
 
-//                                   <div className="flex flex-row items-center justify-center text-gray-400 text-xs">
-//                                     <div className="w-full h-px border-t border-dashed border-black mt-1 mb-1"></div>
-//                                   </div>
+                //                                   <div className="flex flex-row items-center justify-center text-gray-400 text-xs">
+                //                                     <div className="w-full h-px border-t border-dashed border-black mt-1 mb-1"></div>
+                //                                   </div>
 
-//                                   <div className="flex items-center space-x-2">
-//                                     <div className="flex items-center space-x-1">
-//                                       <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-//                                       <span className="font-medium truncate max-w-[120px]">
-//                                         To :
-//                                       </span>
-//                                     </div>
-//                                     <span className="truncate max-w-[140px] text-gray-800">
-//                                       {
-//                                         ride?.locations[
-//                                           ride?.locations.length - 1
-//                                         ]?.lat
-//                                       }
-//                                       ,{" "}
-//                                       {
-//                                         ride.locations[
-//                                           ride.locations.length - 1
-//                                         ].lng
-//                                       }
-//                                     </span>
-//                                   </div>
-//                                 </div>
-//                               </td>
+                //                                   <div className="flex items-center space-x-2">
+                //                                     <div className="flex items-center space-x-1">
+                //                                       <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                //                                       <span className="font-medium truncate max-w-[120px]">
+                //                                         To :
+                //                                       </span>
+                //                                     </div>
+                //                                     <span className="truncate max-w-[140px] text-gray-800">
+                //                                       {
+                //                                         ride?.locations[
+                //                                           ride?.locations.length - 1
+                //                                         ]?.lat
+                //                                       }
+                //                                       ,{" "}
+                //                                       {
+                //                                         ride.locations[
+                //                                           ride.locations.length - 1
+                //                                         ].lng
+                //                                       }
+                //                                     </span>
+                //                                   </div>
+                //                                 </div>
+                //                               </td>
 
-//                               <td className="px-6 py-4 whitespace-nowrap">
-//                                 <span
-//                                   className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-//                                     ride.status
-//                                   )}`}
-//                                 >
-//                                   {ride.status}
-//                                 </span>
-//                               </td>
+                //                               <td className="px-6 py-4 whitespace-nowrap">
+                //                                 <span
+                //                                   className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                //                                     ride.status
+                //                                   )}`}
+                //                                 >
+                //                                   {ride.status}
+                //                                 </span>
+                //                               </td>
 
-//                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-//                                 ${ride.fare}
-//                               </td>
+                //                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                //                                 ${ride.fare}
+                //                               </td>
 
-//                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-//                                 {ride.status === "requested" ? (
-//                                   <button
-//                                     onClick={async () => {
-//   setSelectedRide(ride);
-//   setShowDriverModal(true);
-//   setDriverLoading(true);
-//   try {
-//     const response = await axios.get(`${apiUrl}/active-riders`);
-//     setModalDrivers(response.data);
-//   } catch (err) {
-//     console.error("Failed to fetch drivers:", err);
-//     setModalDrivers([]);
-//   } finally {
-//     setDriverLoading(false);
-//   }
-// }}
+                //                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                //                                 {ride.status === "requested" ? (
+                //                                   <button
+                //                                     onClick={async () => {
+                //   setSelectedRide(ride);
+                //   setShowDriverModal(true);
+                //   setDriverLoading(true);
+                //   try {
+                //     const response = await axios.get(`${apiUrl}/active-riders`);
+                //     setModalDrivers(response.data);
+                //   } catch (err) {
+                //     console.error("Failed to fetch drivers:", err);
+                //     setModalDrivers([]);
+                //   } finally {
+                //     setDriverLoading(false);
+                //   }
+                // }}
 
-//                                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
-//                                   >
-//                                     Assign Driver
-//                                   </button>
-//                                 ) : (
-//                                   <span className="text-gray-500">
-//                                     {ride.driver
-//                                       ? `Driver: ${ride.driver}`
-//                                       : "Driver Assigned"}
-//                                   </span>
-//                                 )}
-//                               </td>
-//                             </tr>
-//                           ))}
-//                       </tbody>
-//                     </table>
-//                   </div>
-//                 </div>
-<AdminRidesManager/>
+                //                                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                //                                   >
+                //                                     Assign Driver
+                //                                   </button>
+                //                                 ) : (
+                //                                   <span className="text-gray-500">
+                //                                     {ride.driver
+                //                                       ? `Driver: ${ride.driver}`
+                //                                       : "Driver Assigned"}
+                //                                   </span>
+                //                                 )}
+                //                               </td>
+                //                             </tr>
+                //                           ))}
+                //                       </tbody>
+                //                     </table>
+                //                   </div>
+                //                 </div>
+                <AdminRidesManager />
               )}
 
               {activeTab === "drivers" && (
@@ -521,7 +532,7 @@ maps                  </button>
                     Driver Management
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {drivers.map((driver,index) => (
+                    {drivers.map((driver, index) => (
                       <div
                         key={index}
                         className="bg-gray-50 rounded-xl p-6 border border-gray-200"
@@ -587,8 +598,8 @@ maps                  </button>
                   </div>
                 </div>
               )}
-              {activeTab==='maps' &&(
-                <AdminDriverMap/>
+              {activeTab === 'maps' && (
+                <AdminDriverMap />
               )}
             </div>
           </div>
@@ -629,17 +640,21 @@ maps                  </button>
                         <span className="font-medium">
                           Pickup :
                         </span>{" "}
-                        {selectedRide.locations[0].lat} - {selectedRide.locations[0].lng}
-                      </p> 
+                        {selectedRide.locations[0]?.lat
+                          ? `${selectedRide.locations[0].lat}, ${selectedRide.locations[0].lng}`
+                          : selectedRide.locations[0]?.address ?? 'N/A'}
+                      </p>
                       <p>
                         <span className="font-medium">
                           Destination :
                         </span>{" "}
-                        {selectedRide.locations[selectedRide.locations.length-1].lat} - {selectedRide.locations[selectedRide.locations.length-1].lng}
+                        {selectedRide.locations[selectedRide.locations.length - 1]?.lat
+                          ? `${selectedRide.locations[selectedRide.locations.length - 1].lat}, ${selectedRide.locations[selectedRide.locations.length - 1].lng}`
+                          : selectedRide.locations[selectedRide.locations.length - 1]?.address ?? 'N/A'}
                       </p>
                       <p>
-                        <span className="font-medium">Fare:</span> $
-                        {/* {selectedRide.fare.toFixed(2)} */}
+                        <span className="font-medium">Fare:</span> ₹
+                        {selectedRide.fare?.toFixed(2) ?? '—'}
                       </p>
                     </div>
                   </div>
@@ -681,16 +696,9 @@ maps                  </button>
                           </div>
                         </div>
                         <button
-                          onClick={async () => {
+                          onClick={() => {
                             console.log(selectedRide, driver);
                             assignDriver(selectedRide._id, driver._id);
-                            try {
-                              const response = await axios.post(
-                                `${apiUrl}/bookings/status/${selectedRide._id}`
-                              );
-                            } catch (error) {
-                              console.log("Satus chnage : ", error);
-                            }
                           }}
                           disabled={isAssigning}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition duration-200"

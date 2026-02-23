@@ -22,9 +22,9 @@ const rideSchema = new mongoose.Schema({
   //     lng: { type: String, required: true },
   //   },
   // },
-  locations:{
+  locations: {
     type: Array,
-    default:[],
+    default: [],
   },
 
   //   rideType: {
@@ -58,13 +58,17 @@ const rideSchema = new mongoose.Schema({
   completedAt: {
     type: Date,
   },
-  userName:{
+  userName: {
     type: String,
-    default:null,
+    default: null,
   },
-  userPhone:{
+  userPhone: {
     type: String,
-    default:null,
+    default: null,
+  },
+  fare: {
+    type: Number,
+    default: 0,
   },
 });
 

@@ -34,9 +34,9 @@ const userSubscriptions = {}; // e.g., { 'rider123': new Set(['user123', 'user45
 io.on("connection", (socket) => {
   console.log("A user connected", socket.id);
   socket.on("join-room", (roomId) => {
-  socket.join(roomId);
-  console.log(`Socket ${socket.id} joined room: ${roomId}`);
-});
+    socket.join(roomId);
+    console.log(`Socket ${socket.id} joined room: ${roomId}`);
+  });
 
   socket.on("admin-login", () => {
     adminSocketId = socket.id;
@@ -47,7 +47,7 @@ io.on("connection", (socket) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const userId = decoded.userId.toString();
-      socket.join(userId); 
+      socket.join(userId);
       const socketId = socket.id;
       users = users.filter((u) => u.userId !== userId);
       users.push({ userId, socketId });
@@ -60,22 +60,22 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("new_ride_request", (data) => {
-  console.log("Received new ride request from user:", data);
+    console.log("Received new ride request from user:", data);
 
-  if (adminSocketId) {
-    io.to(adminSocketId).emit("new_ride_request", data);
-    console.log("Sent ride request to admin:", adminSocketId);
-  } else {
-    console.warn("No admin connected to receive ride request.");
-  }
-});
+    if (adminSocketId) {
+      io.to(adminSocketId).emit("new_ride_request", data);
+      console.log("Sent ride request to admin:", adminSocketId);
+    } else {
+      console.warn("No admin connected to receive ride request.");
+    }
+  });
   socket.on("rider-login", async (token) => {
     console.log(token);
 
     try {
       console.log(token);
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("decoded:",decoded);
+      console.log("decoded:", decoded);
       const driverId = decoded.userId.toString();
       const socketId = socket.id;
       console.log("Driver logged in", driverId, socketId);
@@ -105,112 +105,118 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("join-admin-map", () => {
-  socket.join("admin-map");
-  console.log("Admin joined admin-map room");
-});
-socket.on("start-tracking-driver", ({ userId, riderId, rideId }) => {
-  console.log("🔁 User requested live tracking:", { userId, riderId, rideId });
-
-  const driverData = drivers.find(driver => driver.driverId === riderId);
-
-  if (!driverData) {
-    console.warn("🚫 Driver not found for tracking:", riderId);
-    return;
-  }
-
-  const latestLocation = driverData.location;
-  if (latestLocation) {
-    // Send the current driver location immediately
-    io.to(socket.id).emit("live-driver-location", {
-      location: latestLocation,
-      riderId,
-      rideId,
-      userId
-    });
-  }
-
-  // Optionally: Set up a stream to send updates continuously
-  // But it's better if the driver keeps sending `driver-location` and we emit it below
-
-  // Already handled in your existing "driver-location" listener:
-  // Emit to user every time location comes in
-});
-
-
-socket.on("driver-location", async (data) => {
-  const { location, riderId, rideId } = data;
-  const socketId = socket.id;
-
-  if (!location || !riderId) return;
-
-  const lat = String(location.latitude);
-  const lng = String(location.longitude);
-
-  // Update in-memory driver list
-  drivers = drivers.filter((d) => d.driverId !== riderId);
-  drivers.push({
-    driverId: riderId,
-    socketId,
-    location: { lat, lng },
+    socket.join("admin-map");
+    console.log("Admin joined admin-map room");
   });
+  socket.on("start-tracking-driver", ({ userId, riderId, rideId }) => {
+    console.log("🔁 User requested live tracking:", { userId, riderId, rideId });
 
-  // Save to DB
-  const isValidObjectId = (id) => /^[a-fA-F0-9]{24}$/.test(id);
-  if (isValidObjectId(riderId)) {
-    await User.updateOne({ _id: riderId }, { $set: { location: { lat, lng } } });
-  }
+    const driverData = drivers.find(driver => driver.driverId === riderId);
 
-  // 📡 Emit to all users tracking this driver
-  // 📡 Emit to all users tracking this driver
-const trackingUsers = userSubscriptions[riderId]; // ✅ Fixed line
-if (trackingUsers) {
-  for (const userId of trackingUsers) {
-    const userSocket = users.find((u) => u.userId === userId);
-    if (userSocket) {
-      io.to(userSocket.socketId).emit("live-driver-location", {
-        location: { lat, lng },
+    if (!driverData) {
+      console.warn("🚫 Driver not found for tracking:", riderId);
+      return;
+    }
+
+    const latestLocation = driverData.location;
+    if (latestLocation) {
+      // Send the current driver location immediately
+      io.to(socket.id).emit("live-driver-location", {
+        location: latestLocation,
         riderId,
         rideId,
+        userId
+      });
+    }
+
+    // Optionally: Set up a stream to send updates continuously
+    // But it's better if the driver keeps sending `driver-location` and we emit it below
+
+    // Already handled in your existing "driver-location" listener:
+    // Emit to user every time location comes in
+  });
+
+
+  socket.on("driver-location", async (data) => {
+    const { location, riderId, rideId } = data;
+    const socketId = socket.id;
+
+    if (!location || !riderId) return;
+
+    // Accept both {lat,lng} (TrackingApp) and {latitude,longitude} (native module)
+    const lat = String(location.lat ?? location.latitude ?? "");
+    const lng = String(location.lng ?? location.longitude ?? "");
+
+    if (!lat || !lng || lat === "" || lng === "") {
+      console.warn("⚠️ driver-location: missing lat/lng in payload", location);
+      return;
+    }
+
+
+    // Update in-memory driver list
+    drivers = drivers.filter((d) => d.driverId !== riderId);
+    drivers.push({
+      driverId: riderId,
+      socketId,
+      location: { lat, lng },
+    });
+
+    // Save to DB
+    const isValidObjectId = (id) => /^[a-fA-F0-9]{24}$/.test(id);
+    if (isValidObjectId(riderId)) {
+      await User.updateOne({ _id: riderId }, { $set: { location: { lat, lng } } });
+    }
+
+    // 📡 Emit to all users tracking this driver
+    // 📡 Emit to all users tracking this driver
+    const trackingUsers = userSubscriptions[riderId]; // ✅ Fixed line
+    if (trackingUsers) {
+      for (const userId of trackingUsers) {
+        const userSocket = users.find((u) => u.userId === userId);
+        if (userSocket) {
+          io.to(userSocket.socketId).emit("live-driver-location", {
+            location: { lat, lng },
+            riderId,
+            rideId,
+            userId,
+          });
+        }
+      }
+    }
+
+
+    // Also emit to admin map
+    io.to("admin-map").emit("driver-location", {
+      location: { lat, lng },
+      riderId,
+      driverId: riderId,
+      username: `Driver-${riderId?.slice(0, 5) || "N/A"}`,
+    });
+  });
+
+  socket.on("request-location", ({ userId, riderId }) => {
+    console.log("📥 User requested location stream:", { userId, riderId });
+
+    if (!userSubscriptions[riderId]) {
+      userSubscriptions[riderId] = new Set();
+    }
+    userSubscriptions[riderId].add(userId);
+
+    // Optionally: Immediately send current location (if available)
+    const driver = drivers.find((d) => d.driverId === riderId);
+    const user = users.find((u) => u.userId === userId);
+    if (driver?.location && user) {
+      io.to(user.socketId).emit("driver-location", {
+        location: driver.location,
+        riderId,
         userId,
       });
     }
-  }
-}
-
-
-  // Also emit to admin map
-  io.to("admin-map").emit("driver-location", {
-    location: { lat, lng },
-    riderId,
-    driverId: riderId,
-    username: `Driver-${riderId?.slice(0, 5) || "N/A"}`,
   });
-});
 
-socket.on("request-location", ({ userId, riderId }) => {
-  console.log("📥 User requested location stream:", { userId, riderId });
-
-  if (!userSubscriptions[riderId]) {
-    userSubscriptions[riderId] = new Set();
-  }
-  userSubscriptions[riderId].add(userId);
-
-  // Optionally: Immediately send current location (if available)
-  const driver = drivers.find((d) => d.driverId === riderId);
-  const user = users.find((u) => u.userId === userId);
-  if (driver?.location && user) {
-    io.to(user.socketId).emit("driver-location", {
-      location: driver.location,
-      riderId,
-      userId,
-    });
-  }
-});
-
-// socket.on('start-ride')
+  // socket.on('start-ride')
 
   socket.on('locationUpdate', (data) => {
-    
     const { latitude, longitude, timestamp } = data.location;
     if (latitude && longitude) {
       const lastKnownLocation = { latitude, longitude, timestamp };
@@ -220,12 +226,42 @@ socket.on("request-location", ({ userId, riderId }) => {
       console.warn('[Socket] Incomplete data:', data);
     }
   });
+
+  // Rider emits this when they tap "Complete Ride"
+  socket.on("ride-complete", ({ rideId, userId }) => {
+    console.log(`✅ Ride ${rideId} completed by driver`);
+
+    // Notify the user that their ride is done
+    const userEntry = users.find((u) => u.userId === userId);
+    if (userEntry) {
+      io.to(userEntry.socketId).emit("ride-complete", { rideId });
+      console.log(`📢 Notified user ${userId} of ride completion`);
+    }
+
+    // Notify admin so they can update driver status in real-time
+    if (adminSocketId) {
+      // Find the driver by their socket ID so admin knows which driver is now free
+      const driverEntry = drivers.find((d) => d.socketId === socket.id);
+      io.to(adminSocketId).emit("ride-complete", {
+        rideId,
+        driverId: driverEntry?.driverId ?? null,
+      });
+      console.log(`📢 Notified admin of ride ${rideId} completion`);
+    }
+
+    // Clean up the user subscription for this driver
+    const driverEntry = drivers.find((d) => d.socketId === socket.id);
+    if (driverEntry && userSubscriptions[driverEntry.driverId]) {
+      delete userSubscriptions[driverEntry.driverId];
+    }
+  });
+
   socket.on("disconnect", () => {
     if (adminSocketId === socket.id) {
       adminSocketId = null;
       console.log("Admin logged out");
     }
-console.log('[Socket] Client disconnected:', socket.id);
+    console.log('[Socket] Client disconnected:', socket.id);
     const userIndex = users.findIndex((user) => user.socketId === socket.id);
     if (userIndex !== -1) {
       users.splice(userIndex, 1);

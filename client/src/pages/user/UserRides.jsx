@@ -23,45 +23,45 @@ const UserRides = ({ userId }) => {
   const [driverLocation, setDriverLocation] = useState(null);
 
   // Track Navigation handler
-const handleTrackLocation = async (ride) => {
-  try {
-    const response = await getRideDetails(ride._id);
-    console.log("📦 Ride details response:", response);
+  const handleTrackLocation = async (ride) => {
+    try {
+      const response = await getRideDetails(ride._id);
+      console.log("📦 Ride details response:", response);
 
-    const { booking, riderDetails } = response;
-    const riderId = riderDetails?._id || booking?.driver;
-    const driverLoc = riderDetails?.location;
+      const { booking, riderDetails } = response;
+      const riderId = riderDetails?._id || booking?.driver;
+      const driverLoc = riderDetails?.location;
 
-    if (!riderId || !driverLoc?.lat || !driverLoc?.lng) {
-      alert("Driver location or ID not available.");
-      return;
-    }
+      if (!riderId || !driverLoc?.lat || !driverLoc?.lng) {
+        alert("Driver location or ID not available.");
+        return;
+      }
 
-    const destination = booking?.locations?.[0];
-    if (!destination || !destination.lat || !destination.lng) {
-      alert("User destination not available.");
-      return;
-    }
+      const destination = booking?.locations?.[0];
+      if (!destination || !destination.lat || !destination.lng) {
+        alert("User destination not available.");
+        return;
+      }
 
-    navigate(`/track-ride/${booking._id}`, {
-      state: {
-        userLocation: {
-          lat: parseFloat(destination.lat),
-          lng: parseFloat(destination.lng),
+      navigate(`/track-ride/${booking._id}`, {
+        state: {
+          userLocation: {
+            lat: parseFloat(destination.lat),
+            lng: parseFloat(destination.lng),
+          },
+          driverLocation: {
+            lat: parseFloat(driverLoc.lat),
+            lng: parseFloat(driverLoc.lng),
+            riderId,
+          },
+          rideId: booking._id,
         },
-        driverLocation: {
-          lat: parseFloat(driverLoc.lat),
-          lng: parseFloat(driverLoc.lng),
-          riderId,
-        },
-        rideId: booking._id,
-      },
-    });
-  } catch (err) {
-    console.error("❌ Error in handleTrackLocation:", err);
-    alert("Unable to fetch ride details.");
-  }
-};
+      });
+    } catch (err) {
+      console.error("❌ Error in handleTrackLocation:", err);
+      alert("Unable to fetch ride details.");
+    }
+  };
 
 
   // Fetch ride details
@@ -79,45 +79,45 @@ const handleTrackLocation = async (ride) => {
       console.log(err);
     }
   };
-useEffect(() => {
-  const fetchRides = async () => {
-    try {
-      const res = await axios.get(`${apiUrl}/user/my-rides`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setRides(res.data);
-    } catch (err) {
-      setRides([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchRides = async () => {
+      try {
+        const res = await axios.get(`${apiUrl}/user/my-rides`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setRides(res.data);
+      } catch (err) {
+        setRides([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchRides();
+    fetchRides();
 
-  const socket = socketInstance.getSocket("user");
+    const socket = socketInstance.getSocket("user");
 
-  // ✅ Update status when ride is marked complete
-  socket.on("ride-complete", (data) => {
-    const { rideId } = data;
-    const updatedRides = rides.map((ride) =>
-      ride._id === rideId ? { ...ride, status: "completed" } : ride
-    );
-    setRides(updatedRides);
-  });
+    // ✅ Update status when ride is marked complete
+    socket.on("ride-complete", (data) => {
+      const { rideId } = data;
+      const updatedRides = rides.map((ride) =>
+        ride._id === rideId ? { ...ride, status: "completed" } : ride
+      );
+      setRides(updatedRides);
+    });
 
-  // ✅ Reload ride data when ride is assigned to user
-  socket.on("ride-booked", (data) => {
-    console.log("📦 Ride assigned:", data);
-    // Optional: show toast or alert
-    fetchRides(); // 🔁 Refresh rides from backend
-  });
+    // ✅ Reload ride data when ride is assigned to user
+    socket.on("ride-booked", (data) => {
+      console.log("📦 Ride assigned:", data);
+      // Optional: show toast or alert
+      fetchRides(); // 🔁 Refresh rides from backend
+    });
 
-  return () => {
-    socket.off("ride-complete");
-    socket.off("ride-booked");
-  };
-}, []);
+    return () => {
+      socket.off("ride-complete");
+      socket.off("ride-booked");
+    };
+  }, []);
 
 
   if (loading) {
@@ -157,9 +157,8 @@ useEffect(() => {
           >
             {/* Status badge */}
             <span
-              className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold border ${
-                statusStyles[ride.status]
-              }`}
+              className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold border ${statusStyles[ride.status]
+                }`}
             >
               {statusLabel(ride.status)}
             </span>
@@ -181,7 +180,7 @@ useEffect(() => {
                   <span className="ml-2 text-gray-700">
                     {/* {ride.destination?.address || "N/A"}
                      */}
-                     {ride?.locations[0]?.lat},{ride?.locations[0]?.lng}
+                    {ride?.locations[ride.locations.length - 1]?.lat},{ride?.locations[ride.locations.length - 1]?.lng}
                   </span>
                 </div>
                 <div className="mb-2">

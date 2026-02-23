@@ -1,20 +1,24 @@
 import { notifyAdmin, notifyUser, notifyDriver } from "../index.js";
 import bookingModel from "../models/ride.model.js";
 import User from "../models/user.model.js";
+import { calculateFare } from "../utils/fareUtils.js";
 
 const createBooking = async (req, res) => {
-  console.log("Booking raid");
+  console.log("Booking ride");
   const locations = req.body;
   console.log(locations);
 
   const decoded = req.user;
-  // console.log(decoded.userId);
   const user = await User.findById(decoded.userId);
   if (!user) return res.status(404).json({ error: "User not found" });
-  console.log("booking user", user);
+
+  // Calculate fare from the provided locations
+  const fare = calculateFare(locations);
+
   const newBooking = await bookingModel.create({
     user: decoded.userId,
     locations,
+    fare,
     status: "requested",
     driver: null,
     userName: user.username,
@@ -28,9 +32,9 @@ const createBooking = async (req, res) => {
     newBooking,
   });
 };
+
 export const getAllBookings = async (req, res) => {
   const bookings = await bookingModel.find({});
-
   return res.status(200).json(bookings);
 };
 
@@ -46,10 +50,16 @@ export const cancelBooking = async (req, res) => {
 export const assignDriver = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!id) return res.status(400).json({ error: "Invalid booking ID" });
-
     const { driverId } = req.body;
-    if (!driverId) return res.status(400).json({ error: "Driver ID is required" });
+
+    console.log("🔍 assignDriver called — rideId:", id, "| driverId:", driverId);
+
+    if (!id || id === "undefined") {
+      return res.status(400).json({ error: "Invalid booking ID: received '" + id + "'" });
+    }
+    if (!driverId) {
+      return res.status(400).json({ error: "Driver ID is required" });
+    }
 
     const rideDetails = await bookingModel.findById(id);
     if (!rideDetails) return res.status(404).json({ error: "Ride details not found" });
@@ -74,7 +84,6 @@ export const assignDriver = async (req, res) => {
   }
 };
 
-
 const getBookingDetails = async (req, res) => {
   const { id } = req.params;
   const booking = await bookingModel.findById(id);
@@ -84,6 +93,7 @@ const getBookingDetails = async (req, res) => {
     return res.status(404).json({ error: "Rider details not found" });
   return res.status(200).json({ booking, riderDetails });
 };
+
 const updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -105,29 +115,20 @@ const updateStatus = async (req, res) => {
     return res.status(500).json({ message: "Status updating failed" });
   }
 };
-const rideComplete=async(req,res)=>{
-  const {id}=req.params;
-  if (!id) return res.status(400).json({ error: "Invalid booking ID" });
-  const rideDetails=await BookingModel.findById(id);
-  rideDetails.status="completed";
-  const riderDetails=await User.findById(rideDetails.driver);
-  riderDetails.status="free";
-  await rideDetails.save();
-  await riderDetails.save();
-  res.status(200).json({
-    message:"Ride completed successfully"
-  });
 
-};
-const bookingRequests= async (req, res) => {
-  const booking = await Booking.create({
-    user: req.userId,
-    locations: req.body.locations,
-    fare: req.body.fare,
-    status: "requested"
-  });
-  notifyAdmin(booking);
-  res.status(201).json(booking);
+const rideComplete = async (req, res) => {
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "Invalid booking ID" });
+  const rideDetails = await bookingModel.findById(id); // fixed: was BookingModel
+  if (!rideDetails) return res.status(404).json({ error: "Ride not found" });
+  rideDetails.status = "completed";
+  const riderDetails = await User.findById(rideDetails.driver);
+  if (riderDetails) {
+    riderDetails.status = "free";
+    await riderDetails.save();
+  }
+  await rideDetails.save();
+  res.status(200).json({ message: "Ride completed successfully" });
 };
 
 export const getRequestedBookings = async (req, res) => {
@@ -148,6 +149,5 @@ export default {
   updateStatus,
   getBookingDetails,
   rideComplete,
-  bookingRequests,
-  getRequestedBookings
+  getRequestedBookings,
 };

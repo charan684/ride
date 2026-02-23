@@ -1,8 +1,7 @@
-// src/socket.js
-import { useContext } from 'react';
+// src/services/socketService.jsx
 import { io } from 'socket.io-client';
-import MapContext from '../context/AppContext';
 
+const SOCKET_URL = import.meta.env.VITE_API_URL ?? "https://ride-backend-zstk.onrender.com";
 
 class SocketSingleton {
   constructor() {
@@ -10,39 +9,40 @@ class SocketSingleton {
       this.socket = null;
       SocketSingleton.instance = this;
     }
-    
     return SocketSingleton.instance;
   }
-  clearSocket(){
+
+  clearSocket() {
     console.log("clear");
     try {
-      if(this.socket){
+      if (this.socket) {
         this.socket.disconnect();
-        this.socket=null;
+        this.socket = null;
       }
-      
     } catch (error) {
-      console.log("Clear socket : ",error)
+      console.log("Clear socket : ", error);
     }
   }
-  getSocket(role) {
-    // const {apiUrl} = useContext(MapContext);
-    if (!this.socket) {
-      // this.socket = io(`http://localhost:8001`, {
-      //   autoConnect: true,
-      //   // auth: { token: 'your-auth-token' }, // optional
-      // });
-      this.socket = io(`https://ride-backend-zstk.onrender.com`, {
-        autoConnect: true,
-        // auth: { token: 'your-auth-token' }, // optional
-      });
-      if(role === 'admin'){
 
-        this.socket.emit("admin-login");
-      }
-      else if(role === 'user'){
-        this.socket.emit('user-login',localStorage.getItem('token'));
-      }
+  getSocket(role) {
+    if (!this.socket) {
+      this.socket = io(SOCKET_URL, {
+        autoConnect: true,
+      });
+
+      // Emit login ONLY after socket is confirmed connected (fixes race condition bug #7)
+      this.socket.on("connect", () => {
+        console.log("✅ Client socket connected:", this.socket.id);
+        if (role === 'admin') {
+          this.socket.emit("admin-login");
+        } else if (role === 'user') {
+          this.socket.emit('user-login', localStorage.getItem('token'));
+        }
+      });
+
+      this.socket.on("connect_error", (err) => {
+        console.error("❌ Socket connection error:", err.message);
+      });
     }
 
     return this.socket;
